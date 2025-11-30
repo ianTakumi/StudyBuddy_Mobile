@@ -7,7 +7,7 @@ const getBaseURL = () => {
     return "http://192.168.100.8:5000/api";
   } else {
     // Production - using your deployed server
-    return "https://bayancoopserver.onrender.com/api/v1";
+    return "https://studybuddy-backend-vhyz.onrender.com/api";
   }
 };
 
