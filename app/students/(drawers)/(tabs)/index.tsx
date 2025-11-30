@@ -34,7 +34,7 @@ export default function Index() {
 
       // Fetch study sessions data
       const sessionsResponse = await client.get(`/study-sessions/${user.id}`);
-
+      console.log(sessionsResponse.data);
       // Set the actual data from API responses
       if (flashcardsResponse.data.success) {
         setFlashcards(flashcardsResponse.data.data || []);
@@ -53,6 +53,9 @@ export default function Index() {
     }
   };
 
+  useEffect(() => {
+    console.log("Study sessions state:", studySessions);
+  }, [studySessions]);
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchData();
@@ -65,7 +68,7 @@ export default function Index() {
     }
   }, [user?.id]);
 
-  const getIconForSubject = (subject) => {
+  const getIconForSubject = (subject: string) => {
     if (!subject)
       return <Ionicons name="book-outline" size={24} color="#4A90E2" />;
 
@@ -121,6 +124,14 @@ export default function Index() {
     return timeString;
   };
 
+  const getTodayDate = () => {
+    const now = new Date();
+    // Manual calculation for Philippine Time (UTC+8)
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const phTime = new Date(utc + 8 * 3600000); // UTC+8
+    return phTime.toISOString().split("T")[0];
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
 
@@ -132,9 +143,8 @@ export default function Index() {
     });
   };
 
-  const startPomodoroSession = (session) => {
-    console.log("Starting session:", session);
-    router.push("/PomodoroSession");
+  const startPomodoroSession = (session: string) => {
+    router.push("/students/(drawers)/(tabs)/Schedule");
   };
 
   if (loading) {
@@ -146,13 +156,20 @@ export default function Index() {
     );
   }
 
-  // Get today's date for filtering sessions
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA"); // This should give YYYY-MM-DD in local time
 
   // Filter today's sessions
   const todaySessions = studySessions.filter(
     (session) => session.date === today
   );
+  // DEBUG
+  console.log("=== DYNAMIC DATE DEBUG ===");
+  console.log("Current UTC time:", new Date().toISOString());
+  console.log("Philippine Today's date:", today);
+  console.log("All sessions:", studySessions);
+  console.log("Filtered today sessions:", todaySessions);
+  console.log("Session count:", todaySessions.length);
+  console.log("=== END DEBUG ===");
 
   const completedTodaySessions = todaySessions.filter(
     (session) => session.completed
@@ -248,7 +265,9 @@ export default function Index() {
               </Text>
               <TouchableOpacity
                 className="bg-blue-500 px-4 py-2 rounded-lg"
-                onPress={() => router.push("/Schedule/Create")}
+                onPress={() =>
+                  router.push("/students/(drawers)/(tabs)/Schedule")
+                }
               >
                 <Text className="text-white font-medium">
                   Plan First Session
@@ -359,9 +378,7 @@ export default function Index() {
                   key={flashcard.id}
                   className="bg-white rounded-2xl p-4 mr-4 shadow-sm border border-gray-100 w-48"
                   onPress={() =>
-                    router.push(
-                      `/students/(drawers)/(tabs)/FlashCards/${flashcard.id}`
-                    )
+                    router.push(`/students/(drawers)/(tabs)/FlashCards`)
                   }
                 >
                   <View

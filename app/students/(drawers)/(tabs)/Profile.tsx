@@ -90,7 +90,7 @@ export default function Profile() {
           {/* Study Goals */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/StudyGoals")}
+            onPress={() => router.push("/students/StudyGoals")}
           >
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
@@ -100,27 +100,6 @@ export default function Profile() {
                 <Text className="text-gray-900 font-medium">Study Goals</Text>
                 <Text className="text-gray-500 text-sm">
                   Set and track your learning objectives
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Study Preferences */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/StudyPreferences")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="settings-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Study Preferences
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Customize your study environment
                 </Text>
               </View>
             </View>
@@ -140,7 +119,7 @@ export default function Profile() {
           {/* Personal Information */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/users/UpdateProfile")}
+            onPress={() => router.push("/students/UpdateProfile")}
           >
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
@@ -159,7 +138,10 @@ export default function Profile() {
           </TouchableOpacity>
 
           {/* Change Password */}
-          <TouchableOpacity className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200">
+          <TouchableOpacity
+            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            onPress={() => router.push("/students/ChangePassword")}
+          >
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
                 <Ionicons
@@ -220,7 +202,7 @@ export default function Profile() {
           </View>
 
           {/* Dark Mode */}
-          <View className="px-6 py-4 flex-row items-center justify-between">
+          {/* <View className="px-6 py-4 flex-row items-center justify-between">
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
                 <Ionicons name="moon-outline" size={20} color="#4A90E2" />
@@ -238,7 +220,7 @@ export default function Profile() {
               trackColor={{ false: "#D1D5DB", true: "#4A90E2" }}
               thumbColor="#FFFFFF"
             />
-          </View>
+          </View> */}
         </View>
 
         {/* Support Section */}
@@ -250,7 +232,7 @@ export default function Profile() {
           {/* Help & Support */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/users/Contact")}
+            onPress={() => router.push("/students/Contact")}
           >
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">

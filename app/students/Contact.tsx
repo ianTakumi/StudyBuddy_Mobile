@@ -1,6 +1,6 @@
 import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Alert,
@@ -11,44 +11,87 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
+import { useSelector } from "react-redux";
+import client from "@/utils/axiosInstance";
 
 export default function Contact() {
+  // Get user data from Redux store
+  const user = useSelector((state) => state.auth.user);
+
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     control,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      phone: user.phone,
       subject: "General Inquiry",
       message: "",
     },
   });
   const router = useRouter();
 
-  const onSubmit = (data) => {
-    console.log("Form submitted:", data);
-    Alert.alert(
-      "Message Sent!",
-      "Thank you for contacting us. We'll get back to you soon.",
-      [{ text: "OK" }]
-    );
-    reset();
+  const onSubmit = async (data) => {
+    try {
+      setIsSubmitting(true);
+      console.log("Form submitted:", data);
+
+      const response = await client.post("/contacts/submit", data);
+
+      if (response.data.success) {
+        Alert.alert("Message Sent!", response.data.message, [
+          {
+            text: "OK",
+            onPress: () => {
+              reset({
+                first_name: user.first_name,
+                last_name: user.last_name,
+                email: user.email,
+                phone: user.phone,
+                subject: "General Inquiry",
+                message: "",
+              });
+            },
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Contact submission error:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error ||
+          "Failed to send message. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const subjects = [
     "General Inquiry",
-    "Product Support",
-    "Billing Issue",
     "Technical Support",
+    "Account Issues",
+    "Feature Request",
     "Partnership",
+    "Feedback",
     "Other",
   ];
+
+  const handleSubjectSelect = (subject) => {
+    setValue("subject", subject);
+    setShowSubjectDropdown(false);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -57,10 +100,10 @@ export default function Contact() {
     >
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header with Back Arrow */}
-        <View className="bg-green-600 px-6 pt-16 pb-12">
+        <View className="bg-blue-600 px-6 pt-16 pb-12">
           <View className="flex-row items-center mb-4">
             <TouchableOpacity
-              className="w-10 h-10 bg-green-700 rounded-full items-center justify-center mr-3"
+              className="w-10 h-10 bg-blue-700 rounded-full items-center justify-center mr-3"
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={20} color="white" />
@@ -72,8 +115,8 @@ export default function Contact() {
             </View>
             <View className="w-10" /> {/* Spacer for balance */}
           </View>
-          <Text className="text-green-100 text-center text-base mt-2">
-            Get in touch with our team
+          <Text className="text-blue-100 text-center text-base mt-2">
+            Get in touch with the StudyBuddy team
           </Text>
         </View>
 
@@ -84,8 +127,8 @@ export default function Contact() {
               Send us a message
             </Text>
             <Text className="text-gray-500 mb-6">
-              Fill out the form below and we'll get back to you as soon as
-              possible.
+              Your information is pre-filled. Just select a subject and write
+              your message.
             </Text>
 
             {/* First Name */}
@@ -95,31 +138,16 @@ export default function Contact() {
               </Text>
               <Controller
                 control={control}
-                rules={{
-                  required: "First name is required",
-                  minLength: {
-                    value: 2,
-                    message: "First name must be at least 2 characters",
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
+                render={({ field: { value } }) => (
                   <TextInput
-                    className={`border-2 rounded-xl px-4 py-4 bg-white ${
-                      errors.firstName ? "border-red-400" : "border-gray-200"
-                    }`}
-                    placeholder="Enter your first name"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
+                    className="border-2 rounded-xl px-4 py-4 bg-gray-100 border-gray-200 text-gray-600"
                     value={value}
+                    editable={false}
+                    selectTextOnFocus={false}
                   />
                 )}
-                name="firstName"
+                name="first_name"
               />
-              {errors.firstName && (
-                <Text className="text-red-500 text-sm mt-2 ml-1">
-                  {errors.firstName.message}
-                </Text>
-              )}
             </View>
 
             {/* Last Name */}
@@ -129,31 +157,16 @@ export default function Contact() {
               </Text>
               <Controller
                 control={control}
-                rules={{
-                  required: "Last name is required",
-                  minLength: {
-                    value: 2,
-                    message: "Last name must be at least 2 characters",
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
+                render={({ field: { value } }) => (
                   <TextInput
-                    className={`border-2 rounded-xl px-4 py-4 bg-white ${
-                      errors.lastName ? "border-red-400" : "border-gray-200"
-                    }`}
-                    placeholder="Enter your last name"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
+                    className="border-2 rounded-xl px-4 py-4 bg-gray-100 border-gray-200 text-gray-600"
                     value={value}
+                    editable={false}
+                    selectTextOnFocus={false}
                   />
                 )}
-                name="lastName"
+                name="last_name"
               />
-              {errors.lastName && (
-                <Text className="text-red-500 text-sm mt-2 ml-1">
-                  {errors.lastName.message}
-                </Text>
-              )}
             </View>
 
             {/* Email */}
@@ -163,33 +176,18 @@ export default function Contact() {
               </Text>
               <Controller
                 control={control}
-                rules={{
-                  required: "Email is required",
-                  pattern: {
-                    value: /\S+@\S+\.\S+/,
-                    message: "Enter a valid email address",
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
+                render={({ field: { value } }) => (
                   <TextInput
-                    className={`border-2 rounded-xl px-4 py-4 bg-white ${
-                      errors.email ? "border-red-400" : "border-gray-200"
-                    }`}
-                    placeholder="your.email@example.com"
+                    className="border-2 rounded-xl px-4 py-4 bg-gray-100 border-gray-200 text-gray-600"
+                    value={value}
+                    editable={false}
+                    selectTextOnFocus={false}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
                   />
                 )}
                 name="email"
               />
-              {errors.email && (
-                <Text className="text-red-500 text-sm mt-2 ml-1">
-                  {errors.email.message}
-                </Text>
-              )}
             </View>
 
             {/* Phone */}
@@ -199,69 +197,61 @@ export default function Contact() {
               </Text>
               <Controller
                 control={control}
-                rules={{
-                  pattern: {
-                    value: /^[0-9+\-\s()]*$/,
-                    message: "Enter a valid phone number",
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
+                render={({ field: { value } }) => (
                   <TextInput
-                    className={`border-2 rounded-xl px-4 py-4 bg-white ${
-                      errors.phone ? "border-red-400" : "border-gray-200"
-                    }`}
-                    placeholder="Enter your phone number"
-                    keyboardType="phone-pad"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
+                    className="border-2 rounded-xl px-4 py-4 bg-gray-100 border-gray-200 text-gray-600"
                     value={value}
+                    editable={false}
+                    selectTextOnFocus={false}
+                    keyboardType="phone-pad"
                   />
                 )}
                 name="phone"
               />
-              {errors.phone && (
-                <Text className="text-red-500 text-sm mt-2 ml-1">
-                  {errors.phone.message}
-                </Text>
-              )}
             </View>
 
-            {/* Subject */}
+            {/* Subject Dropdown */}
             <View className="mb-5">
-              <Text className="text-gray-700 font-semibold mb-2">Subject</Text>
+              <Text className="text-gray-700 font-semibold mb-2">
+                Subject *
+              </Text>
               <Controller
                 control={control}
-                render={({ field: { onChange, value } }) => (
-                  <View className="border-2 border-gray-200 rounded-xl bg-white">
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      className="p-3"
+                rules={{
+                  required: "Please select a subject",
+                }}
+                render={({ field: { value } }) => (
+                  <View>
+                    <TouchableOpacity
+                      className={`border-2 rounded-xl px-4 py-4 bg-white flex-row items-center justify-between ${
+                        errors.subject ? "border-red-400" : "border-gray-200"
+                      }`}
+                      onPress={() =>
+                        setShowSubjectDropdown(!showSubjectDropdown)
+                      }
+                      disabled={isSubmitting}
                     >
-                      <View className="flex-row space-x-3">
-                        {subjects.map((subject) => (
-                          <TouchableOpacity
-                            key={subject}
-                            onPress={() => onChange(subject)}
-                            className={`px-5 py-3 rounded-xl ${
-                              value === subject
-                                ? "bg-green-500 shadow-sm"
-                                : "bg-gray-50"
-                            }`}
-                          >
-                            <Text
-                              className={`font-semibold ${
-                                value === subject
-                                  ? "text-white"
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              {subject}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </ScrollView>
+                      <Text
+                        className={`${value ? "text-gray-900" : "text-gray-500"} ${
+                          isSubmitting ? "opacity-50" : ""
+                        }`}
+                      >
+                        {value || "Select a subject"}
+                      </Text>
+                      <Ionicons
+                        name={
+                          showSubjectDropdown ? "chevron-up" : "chevron-down"
+                        }
+                        size={20}
+                        color="#6B7280"
+                      />
+                    </TouchableOpacity>
+
+                    {errors.subject && (
+                      <Text className="text-red-500 text-sm mt-2 ml-1">
+                        {errors.subject.message}
+                      </Text>
+                    )}
                   </View>
                 )}
                 name="subject"
@@ -270,7 +260,9 @@ export default function Contact() {
 
             {/* Message */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-semibold mb-2">Message</Text>
+              <Text className="text-gray-700 font-semibold mb-2">
+                Message *
+              </Text>
               <Controller
                 control={control}
                 rules={{
@@ -284,7 +276,7 @@ export default function Contact() {
                   <TextInput
                     className={`border-2 rounded-xl px-4 py-4 bg-white min-h-[140px] text-left align-top ${
                       errors.message ? "border-red-400" : "border-gray-200"
-                    }`}
+                    } ${isSubmitting ? "opacity-50" : ""}`}
                     placeholder="Type your message here..."
                     multiline
                     numberOfLines={5}
@@ -292,6 +284,7 @@ export default function Contact() {
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
+                    editable={!isSubmitting}
                   />
                 )}
                 name="message"
@@ -306,11 +299,23 @@ export default function Contact() {
             {/* Submit Button */}
             <TouchableOpacity
               onPress={handleSubmit(onSubmit)}
-              className="bg-green-600 rounded-xl py-5 shadow-lg active:bg-green-700"
+              disabled={isSubmitting}
+              className={`rounded-xl py-5 shadow-lg flex-row items-center justify-center ${
+                isSubmitting ? "bg-blue-400" : "bg-blue-600 active:bg-blue-700"
+              }`}
             >
-              <Text className="text-white text-center font-bold text-lg">
-                Send Message
-              </Text>
+              {isSubmitting ? (
+                <>
+                  <ActivityIndicator size="small" color="white" />
+                  <Text className="text-white text-center font-bold text-lg ml-2">
+                    Sending...
+                  </Text>
+                </>
+              ) : (
+                <Text className="text-white text-center font-bold text-lg">
+                  Send Message
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -322,37 +327,37 @@ export default function Contact() {
 
             <View className="space-y-5">
               <View className="flex-row items-center">
-                <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center mr-4">
-                  <MaterialIcons name="email" size={24} color="#16a34a" />
+                <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-4">
+                  <MaterialIcons name="email" size={24} color="#2563eb" />
                 </View>
                 <View>
                   <Text className="text-gray-500 text-sm">Email</Text>
                   <Text className="text-gray-900 font-semibold text-base">
-                    support@cooperativefarming.com
+                    support@studybuddy.com
                   </Text>
                 </View>
               </View>
 
               <View className="flex-row items-center">
-                <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center mr-4">
-                  <FontAwesome name="phone" size={24} color="#16a34a" />
+                <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-4">
+                  <FontAwesome name="phone" size={24} color="#2563eb" />
                 </View>
                 <View>
                   <Text className="text-gray-500 text-sm">Phone</Text>
                   <Text className="text-gray-900 font-semibold text-base">
-                    +1 (555) 123-4567
+                    +63 961 213 5234
                   </Text>
                 </View>
               </View>
 
               <View className="flex-row items-center">
-                <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center mr-4">
-                  <Ionicons name="location" size={24} color="#16a34a" />
+                <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-4">
+                  <Ionicons name="location" size={24} color="#2563eb" />
                 </View>
                 <View>
                   <Text className="text-gray-500 text-sm">Address</Text>
                   <Text className="text-gray-900 font-semibold text-base">
-                    123 Farm Street, Agriculture City
+                    Philippines
                   </Text>
                 </View>
               </View>
@@ -360,6 +365,42 @@ export default function Contact() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Subject Dropdown Modal */}
+      <Modal
+        visible={showSubjectDropdown}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSubjectDropdown(false)}
+      >
+        <TouchableOpacity
+          className="flex-1 bg-black/50 justify-center items-center"
+          activeOpacity={1}
+          onPress={() => setShowSubjectDropdown(false)}
+        >
+          <View className="bg-white rounded-2xl w-11/12 max-h-80">
+            <View className="p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold text-gray-800 text-center">
+                Select Subject
+              </Text>
+            </View>
+
+            <ScrollView className="max-h-64">
+              {subjects.map((subject, index) => (
+                <TouchableOpacity
+                  key={subject}
+                  className={`px-6 py-4 border-b border-gray-100 ${
+                    index === subjects.length - 1 ? "border-b-0" : ""
+                  }`}
+                  onPress={() => handleSubjectSelect(subject)}
+                >
+                  <Text className="text-gray-800 text-base">{subject}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

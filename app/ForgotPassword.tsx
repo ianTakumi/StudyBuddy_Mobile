@@ -1,8 +1,13 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+} from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "expo-router";
-import { TextInput } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import client from "@/utils/axiosInstance";
 
