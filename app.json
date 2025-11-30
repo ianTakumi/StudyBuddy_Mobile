@@ -1,37 +1,49 @@
 {
   "expo": {
     "name": "Study Buddy",
-    "slug": "mobile",
+    "slug": "study-buddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "studybuddy",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splashIcon/splash-light.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "dark": {
+        "image": "./assets/splashIcon/splash-dark.png",
+        "backgroundColor": "#000000"
+      }
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "icon": {
-        "dark": "./assets/iosIcon/ios-dark.png",
-        "light": "./assets/iosIcon/ios-light.png",
-        "tinted": "./assets/iosIcon/ios-tinted.png"
-      },
-      "bundleIdentifier": "com.ianTakumi.bayancoop",
+      "bundleIdentifier": "com.ianTakumi.studyBuddy",
+      "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/adaptiveIcon/adaptive-icon.png",
-        "monochromeImage": "./assets/adaptiveIcon/adaptive-icon.png"
+        "foregroundImage": "./assets/adaptiveIcon/adaptive-icon.png"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.ian_takumi.mobile"
+      "package": "com.ian_takumi.studyBuddy",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
-      "output": "static",
       "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
@@ -41,10 +53,10 @@
         "expo-splash-screen",
         {
           "image": "./assets/splashIcon/splash-light.png",
-          "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
+            "image": "./assets/splashIcon/splash-dark.png",
             "backgroundColor": "#000000"
           }
         }
@@ -55,16 +67,13 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "2372370f-a87a-4ef3-9a24-23bb085515b0"
+        "projectId": "f32b34d1-c87f-4e1e-a326-857bacfa108e"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/2372370f-a87a-4ef3-9a24-23bb085515b0"
-    }
+    "owner": "ian_takumi"
   }
 }
