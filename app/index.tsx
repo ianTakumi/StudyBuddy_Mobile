@@ -15,11 +15,13 @@ export default function Index() {
       if (hasOnboarded) {
         if (isAuthenticated) {
           // ✅ Check the role before navigating
-          router.replace("/students/(drawers)/(tabs)");
+
           if (user?.role === "student") {
             router.replace("/students/(drawers)/(tabs)");
           } else if (user?.role === "teacher") {
             router.replace("/teachers/(drawers)/(tabs)/Index");
+          } else if (user?.role === "admin") {
+            router.replace("/admin/(drawers)/(tabs)/Index");
           }
         } else {
           router.replace("/LoginScreen");

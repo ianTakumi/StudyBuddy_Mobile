@@ -65,7 +65,7 @@ const RegisterScreen: React.FC = () => {
           phone,
           email,
           password,
-          role,
+          role: "admin",
         })
         .then((res) => {
           if (res.status === 201) {

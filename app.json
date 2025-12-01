@@ -40,6 +40,8 @@
       "versionCode": 1,
       "permissions": [
         "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "INTERNET",
         "ACCESS_NETWORK_STATE"
       ]
     },
@@ -74,6 +76,12 @@
         "projectId": "f32b34d1-c87f-4e1e-a326-857bacfa108e"
       }
     },
-    "owner": "ian_takumi"
+    "owner": "ian_takumi",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f32b34d1-c87f-4e1e-a326-857bacfa108e"
+    }
   }
 }

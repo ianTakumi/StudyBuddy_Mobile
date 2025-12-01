@@ -54,6 +54,8 @@ const LoginScreen: React.FC = () => {
           // Redirect based on role
           if (res.data.user.role === "teacher") {
             router.replace("/teachers/(drawers)/(tabs)/Index");
+          } else if (res.data.user.role === "admin") {
+            router.replace("/admin/(drawers)/(tabs)/Index");
           } else {
             router.replace("/students/(drawers)/(tabs)");
           }

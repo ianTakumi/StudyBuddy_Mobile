@@ -8,8 +8,6 @@ export default function _layout() {
       <Stack.Screen name="Contact" options={{ headerShown: false }} />
       <Stack.Screen name="AboutUs" options={{ headerShown: false }} />
       <Stack.Screen name="UpdateProfile" options={{ headerShown: false }} />
-      <Stack.Screen name="ClassDetails" options={{ headerShown: false }} />
-      <Stack.Screen name="QuizDetails" options={{ headerShown: false }} />
       <Stack.Screen name="ChangePassword" options={{ headerShown: false }} />
       <Stack.Screen name="StudyGoals" options={{ headerShown: false }} />
     </Stack>

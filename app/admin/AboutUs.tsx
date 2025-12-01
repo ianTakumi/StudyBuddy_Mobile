@@ -263,15 +263,15 @@ export default function AboutUs() {
           </Text>
           <View className="bg-white rounded-2xl p-6 border border-blue-200">
             <Text className="text-lg font-semibold text-blue-600 text-center mb-4">
-              We&apos;re here to help you succeed!
+              We're here to help you succeed!
             </Text>
             <Text className="text-gray-700 text-center leading-6 mb-4">
               Have questions about StudyBuddy or suggestions for improvement?
-              We&apos;d love to hear from students, teachers, and educators.
+              We'd love to hear from students, teachers, and educators.
             </Text>
 
             <TouchableOpacity
-              onPress={() => router.push("/teachers/Contact")}
+              onPress={() => router.push("/users/Contact")}
               className="bg-blue-600 rounded-xl py-4 px-6 flex-row items-center justify-center mt-4"
             >
               <Ionicons

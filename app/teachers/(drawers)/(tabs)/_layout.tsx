@@ -28,6 +28,8 @@ export default function TabLayout() {
             case "Classes":
               return <Ionicons name="school-outline" size={22} color={color} />;
 
+            case "FlashCards":
+              return <Ionicons name="copy-outline" size={22} color={color} />;
             case "Assignments":
               return (
                 <Ionicons
@@ -70,6 +72,8 @@ export default function TabLayout() {
           tabBarButton: isTeacher ? undefined : () => null,
         }}
       />
+
+      <Tabs.Screen name="FlashCards" options={{ title: "Flashcards" }} />
 
       <Tabs.Screen
         name="Analytics"
