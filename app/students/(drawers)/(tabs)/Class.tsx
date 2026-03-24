@@ -95,7 +95,7 @@ export default function StudentClasses() {
         `/classes/students/${user.id}/join-class`,
         {
           classCode: classCode.trim().toUpperCase(),
-        }
+        },
       );
 
       if (response.data.success) {
@@ -109,7 +109,7 @@ export default function StudentClasses() {
       Alert.alert(
         "Error",
         error.response?.data?.message ||
-          "Failed to join class. Please check the class code and try again."
+          "Failed to join class. Please check the class code and try again.",
       );
     } finally {
       setSubmitting(false);
@@ -133,22 +133,22 @@ export default function StudentClasses() {
       params: {
         id: classItem.id,
         className: classItem.name,
-        subject: classItem.subject, // Fixed: classItem instead of item
-        gradeLevel: classItem.grade_level, // Fixed: classItem instead of item
-        schedule: classItem.schedule, // Fixed: classItem instead of item
-        room: classItem.room, // Fixed: classItem instead of item
-        description: classItem.description, // Fixed: classItem instead of item
-        classCode: classItem.class_code, // Fixed: classItem instead of item
+        subject: classItem.subject,
+        gradeLevel: classItem.grade_level,
+        schedule: classItem.schedule,
+        room: classItem.room,
+        description: classItem.description,
+        classCode: classItem.class_code,
         teacherName: classItem.teacher
           ? `${classItem.teacher.first_name} ${classItem.teacher.last_name}`
-          : "Unknown Teacher", // Fixed: classItem instead of item
+          : "Unknown Teacher",
       },
     });
   };
 
   // Helper function to get full teacher name
   const getTeacherName = (
-    teacher: { first_name: string; last_name: string } | undefined
+    teacher: { first_name: string; last_name: string } | undefined,
   ) => {
     if (!teacher) return "Unknown Teacher";
     return `${teacher.first_name} ${teacher.last_name}`.trim();
@@ -156,29 +156,29 @@ export default function StudentClasses() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#6366F1" />
-        <Text className="text-gray-600 mt-4">Loading your classes...</Text>
+      <View className="flex-1 bg-blue-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="text-blue-600 mt-4">Loading your classes...</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-blue-50">
       {/* Header */}
-      <View className="bg-white pt-16 pb-6 px-6 border-b border-gray-200">
+      <View className="bg-white pt-16 pb-6 px-6 border-b border-blue-100 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <View>
-            <Text className="text-3xl font-bold text-gray-900">My Classes</Text>
-            <Text className="text-gray-600 mt-1">
+            <Text className="text-3xl font-bold text-blue-600">My Classes</Text>
+            <Text className="text-gray-500 mt-1">
               {classes.length} enrolled class{classes.length !== 1 ? "es" : ""}
             </Text>
           </View>
           <TouchableOpacity
-            className="bg-green-500 rounded-xl px-4 py-3 flex-row items-center"
+            className="bg-blue-500 rounded-xl px-4 py-3 flex-row items-center shadow-md"
             onPress={openJoinModal}
           >
-            <Ionicons name="add" size={20} color="white" />
+            <Ionicons name="add-circle-outline" size={20} color="white" />
             <Text className="text-white font-semibold ml-2">Join Class</Text>
           </TouchableOpacity>
         </View>
@@ -192,23 +192,25 @@ export default function StudentClasses() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#6366F1"]}
-            tintColor="#6366F1"
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
           />
         }
         className="flex-1"
         contentContainerClassName="p-4"
         ListEmptyComponent={
-          <View className="bg-white rounded-2xl p-8 items-center mt-8 shadow-sm border border-gray-100">
-            <Ionicons name="school-outline" size={64} color="#9CA3AF" />
-            <Text className="text-gray-500 text-lg font-semibold mt-4 text-center">
+          <View className="bg-white rounded-2xl p-8 items-center mt-8 shadow-md border border-blue-100">
+            <View className="bg-blue-100 rounded-full p-4 mb-4">
+              <Ionicons name="school-outline" size={64} color="#3B82F6" />
+            </View>
+            <Text className="text-gray-800 text-lg font-semibold mt-4 text-center">
               No Classes Yet
             </Text>
-            <Text className="text-gray-400 text-center mt-2">
+            <Text className="text-gray-500 text-center mt-2">
               Join a class using a class code from your teacher
             </Text>
             <TouchableOpacity
-              className="bg-green-500 rounded-xl py-3 px-6 flex-row items-center mt-4"
+              className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center mt-4 shadow-md"
               onPress={openJoinModal}
             >
               <Ionicons name="enter-outline" size={18} color="white" />
@@ -220,46 +222,54 @@ export default function StudentClasses() {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            className="bg-white rounded-2xl p-4 mb-3 shadow-sm border border-gray-100 active:bg-gray-50"
+            className="bg-white rounded-2xl p-4 mb-3 shadow-md border border-blue-100 active:bg-blue-50"
             onPress={() => viewClassDetails(item)}
           >
             <View className="flex-row items-start justify-between mb-3">
               <View className="flex-1">
-                <Text className="font-bold text-gray-900 text-lg">
-                  {item.name}
-                </Text>
-                <Text className="text-gray-600 text-sm mt-1">
+                <View className="flex-row items-center mb-1">
+                  <View className="bg-blue-100 rounded-lg p-1 mr-2">
+                    <Ionicons name="book-outline" size={16} color="#3B82F6" />
+                  </View>
+                  <Text className="font-bold text-gray-900 text-lg">
+                    {item.name}
+                  </Text>
+                </View>
+                <Text className="text-blue-600 text-sm mt-1 font-medium">
                   {item.subject} • {item.grade_level}
                 </Text>
                 {item.teacher && (
-                  <Text className="text-gray-500 text-sm mt-1">
-                    Teacher: {getTeacherName(item.teacher)}
-                  </Text>
+                  <View className="flex-row items-center mt-2">
+                    <Ionicons name="person-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-500 text-sm ml-1">
+                      {getTeacherName(item.teacher)}
+                    </Text>
+                  </View>
                 )}
               </View>
-              <View className="bg-indigo-100 rounded-lg px-2 py-1">
-                <Text className="text-indigo-700 text-xs font-semibold">
+              <View className="bg-blue-100 rounded-lg px-3 py-1">
+                <Text className="text-blue-700 text-xs font-bold">
                   {item.class_code}
                 </Text>
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center space-x-4">
+            <View className="flex-row items-center justify-between mt-2">
+              <View className="flex-row items-center gap-4">
                 {item.schedule && (
-                  <View className="flex-row items-center">
-                    <Ionicons name="time-outline" size={14} color="#6B7280" />
+                  <View className="flex-row items-center bg-gray-50 rounded-lg px-2 py-1">
+                    <Ionicons name="time-outline" size={12} color="#3B82F6" />
                     <Text className="text-gray-600 text-xs ml-1">
                       {item.schedule}
                     </Text>
                   </View>
                 )}
                 {item.room && (
-                  <View className="flex-row items-center">
+                  <View className="flex-row items-center bg-gray-50 rounded-lg px-2 py-1">
                     <Ionicons
                       name="business-outline"
-                      size={14}
-                      color="#6B7280"
+                      size={12}
+                      color="#3B82F6"
                     />
                     <Text className="text-gray-600 text-xs ml-1">
                       {item.room}
@@ -269,9 +279,11 @@ export default function StudentClasses() {
               </View>
 
               <View className="flex-row items-center">
-                <Text className="text-green-600 text-xs font-medium bg-green-100 rounded-lg px-2 py-1">
-                  Enrolled
-                </Text>
+                <View className="bg-green-100 rounded-lg px-2 py-1">
+                  <Text className="text-green-700 text-xs font-medium">
+                    ✓ Enrolled
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -292,36 +304,65 @@ export default function StudentClasses() {
         onRequestClose={closeJoinModal}
       >
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-w-md">
+          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-w-md shadow-xl">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-2xl font-bold text-gray-900">
-                Join Class
-              </Text>
-              <TouchableOpacity onPress={closeJoinModal}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+              <View className="flex-row items-center">
+                <View className="bg-blue-100 rounded-full p-2 mr-3">
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={24}
+                    color="#3B82F6"
+                  />
+                </View>
+                <Text className="text-2xl font-bold text-blue-600">
+                  Join Class
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={closeJoinModal}
+                className="bg-gray-100 rounded-full p-2"
+              >
+                <Ionicons name="close" size={20} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            <Text className="text-gray-600 mb-2">
-              Enter the class code provided by your teacher
+            <Text className="text-gray-600 mb-4">
+              Enter the class code provided by your teacher to join the class
             </Text>
 
-            <TextInput
-              value={classCode}
-              onChangeText={setClassCode}
-              placeholder="Enter class code (e.g., MATH101)"
-              className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white mb-4"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="characters"
-              maxLength={10}
-            />
+            <View className="mb-4">
+              <Text className="text-gray-700 text-sm mb-2 font-medium">
+                Class Code
+              </Text>
+              <TextInput
+                value={classCode}
+                onChangeText={setClassCode}
+                placeholder="e.g., MATH101"
+                className="border border-blue-200 rounded-xl px-4 py-3 text-gray-900 bg-blue-50"
+                placeholderTextColor="#9CA3AF"
+                autoCapitalize="characters"
+                maxLength={10}
+              />
+            </View>
 
-            <Text className="text-gray-500 text-sm mb-6">
-              The class code is usually 6 characters long and contains letters
-              and numbers
-            </Text>
+            <View className="bg-blue-50 rounded-xl p-3 mb-6">
+              <View className="flex-row items-center mb-1">
+                <Ionicons
+                  name="information-circle-outline"
+                  size={16}
+                  color="#3B82F6"
+                />
+                <Text className="text-blue-700 text-xs font-medium ml-1">
+                  Need help?
+                </Text>
+              </View>
+              <Text className="text-gray-600 text-xs">
+                The class code is usually 6-10 characters long and contains
+                letters and numbers. Ask your teacher if you don't have one.
+              </Text>
+            </View>
 
-            <View className="flex-row space-x-3">
+            <View className="flex-row gap-3">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                 onPress={closeJoinModal}
@@ -332,16 +373,23 @@ export default function StudentClasses() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-green-500 rounded-xl disabled:bg-green-300"
+                className={`flex-1 py-3 px-4 rounded-xl flex-row items-center justify-center ${
+                  submitting || !classCode.trim()
+                    ? "bg-blue-300"
+                    : "bg-blue-500"
+                }`}
                 onPress={handleJoinClass}
                 disabled={submitting || !classCode.trim()}
               >
                 {submitting ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text className="text-white font-medium text-center">
-                    Join Class
-                  </Text>
+                  <>
+                    <Ionicons name="log-in-outline" size={18} color="white" />
+                    <Text className="text-white font-medium text-center ml-2">
+                      Join Class
+                    </Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>

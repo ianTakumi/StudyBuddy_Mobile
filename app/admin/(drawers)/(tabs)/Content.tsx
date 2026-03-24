@@ -153,7 +153,7 @@ export default function ContentScreen() {
     setSelectedContent((prev) =>
       prev.includes(contentId)
         ? prev.filter((id) => id !== contentId)
-        : [...prev, contentId]
+        : [...prev, contentId],
     );
   };
 
@@ -161,7 +161,7 @@ export default function ContentScreen() {
     setSelectedContent(
       selectedContent.length === filteredContent.length
         ? []
-        : filteredContent.map((item) => item.id)
+        : filteredContent.map((item) => item.id),
     );
   };
 
@@ -187,7 +187,7 @@ export default function ContentScreen() {
             setSelectedContent([]);
           },
         },
-      ]
+      ],
     );
   };
 
@@ -278,7 +278,7 @@ export default function ContentScreen() {
       </View>
 
       <View className="flex-row justify-between items-center border-t border-gray-100 pt-3">
-        <View className="flex-row space-x-4">
+        <View className="flex-row gap-4">
           {type === "flashcards" && (
             <View className="flex-row items-center">
               <Ionicons name="copy-outline" size={16} color="#6B7280" />
@@ -309,7 +309,7 @@ export default function ContentScreen() {
           )}
         </View>
 
-        <View className="flex-row space-x-2">
+        <View className="flex-row gap-2">
           <TouchableOpacity
             className="p-2 bg-gray-100 rounded-lg"
             onPress={() => handleContentAction("Edit", item.id)}
@@ -321,7 +321,7 @@ export default function ContentScreen() {
             onPress={() =>
               handleContentAction(
                 item.status === "approved" ? "Disable" : "Approve",
-                item.id
+                item.id,
               )
             }
           >
@@ -383,7 +383,7 @@ export default function ContentScreen() {
         showsHorizontalScrollIndicator={false}
         className="px-4 py-3"
       >
-        <View className="flex-row space-x-2">
+        <View className="flex-row gap-2">
           <StatCard
             title="Total Flashcards"
             value={stats.totalFlashcards.toLocaleString()}
@@ -460,7 +460,7 @@ export default function ContentScreen() {
 
       {/* Search and Filters */}
       <View className="bg-white px-4 py-3 shadow-sm">
-        <View className="flex-row space-x-3 mb-3">
+        <View className="flex-row gap-3 mb-3">
           <View className="flex-1 bg-gray-100 rounded-lg px-3 py-2 flex-row items-center">
             <Ionicons name="search" size={20} color="#9CA3AF" />
             <TextInput
@@ -477,7 +477,7 @@ export default function ContentScreen() {
           showsHorizontalScrollIndicator={false}
           className="flex-1"
         >
-          <View className="flex-row space-x-2">
+          <View className="flex-row gap-2">
             {categories.map((category) => (
               <TouchableOpacity
                 key={category}
@@ -510,7 +510,7 @@ export default function ContentScreen() {
             <Text className="text-blue-800 font-medium">
               {selectedContent.length} item(s) selected
             </Text>
-            <View className="flex-row space-x-2">
+            <View className="flex-row gap-2">
               <TouchableOpacity
                 className="px-3 py-1 bg-green-500 rounded-lg flex-row items-center"
                 onPress={() => handleContentAction("Approve")}

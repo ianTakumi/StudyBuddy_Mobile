@@ -236,27 +236,6 @@ export default function TeacherProfile() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          {/* Teaching Preferences */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            // onPress={() => router.push("/TeacherPreferences")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="settings-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Teaching Preferences
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Customize your teaching settings
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
           {/* Notifications */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between"
@@ -318,7 +297,7 @@ export default function TeacherProfile() {
                 <Text className="text-gray-600 text-center mb-6">
                   Are you sure you want to logout from StudyBuddy?
                 </Text>
-                <View className="flex-row justify-between space-x-3">
+                <View className="flex-row justify-between gap-3">
                   <TouchableOpacity
                     className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                     onPress={cancelLogout}

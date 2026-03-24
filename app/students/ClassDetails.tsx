@@ -75,7 +75,7 @@ export default function ClassDetails() {
 
       // Fetch students in this class using the specific API endpoint
       const studentsResponse = await client.get(
-        `classes/${user.id}/${classDetails.id}/classmates`
+        `classes/${user.id}/${classDetails.id}/classmates`,
       );
 
       if (studentsResponse.data.success) {
@@ -96,7 +96,7 @@ export default function ClassDetails() {
             try {
               // Check if student already submitted this quiz
               const submissionResponse = await client.get(
-                `/quiz-taking/${quiz.id}/results/${user.id}`
+                `/quiz-taking/${quiz.id}/results/${user.id}`,
               );
 
               if (
@@ -127,7 +127,7 @@ export default function ClassDetails() {
                 status: quiz.status === "published" ? "published" : "draft",
               };
             }
-          })
+          }),
         );
 
         setQuizzes(quizzesWithSubmissions);
@@ -161,7 +161,7 @@ export default function ClassDetails() {
       Alert.alert(
         "Quiz Already Submitted",
         "You have already completed this quiz. You cannot retake it.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
       return;
     }
@@ -214,14 +214,14 @@ export default function ClassDetails() {
   }
 
   const renderOverview = () => (
-    <View className="space-y-6">
+    <View className="gap-6">
       {/* Class Information Card */}
       <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <Text className="text-xl font-bold text-gray-800 mb-4">
           Class Information
         </Text>
 
-        <View className="space-y-3">
+        <View className="gap-3">
           <View className="flex-row items-center">
             <Ionicons name="book-outline" size={20} color="#4A90E2" />
             <Text className="text-gray-600 ml-3 flex-1">Subject:</Text>
@@ -285,7 +285,7 @@ export default function ClassDetails() {
       )}
 
       {/* Quick Stats */}
-      <View className="flex-row justify-between space-x-4">
+      <View className="flex-row justify-between gap-4">
         <View className="bg-blue-50 rounded-2xl p-4 flex-1 items-center">
           <Text className="text-2xl font-bold text-blue-600">
             {students.length}
@@ -309,7 +309,7 @@ export default function ClassDetails() {
       </View>
 
       {/* Quick Actions */}
-      <View className="flex-row space-x-4">
+      <View className="flex-row gap-4">
         <TouchableOpacity
           className="bg-blue-500 rounded-2xl p-4 flex-1 items-center"
           onPress={() => setActiveTab("quizzes")}
@@ -330,7 +330,7 @@ export default function ClassDetails() {
   );
 
   const renderStudents = () => (
-    <View className="space-y-4">
+    <View className="gap-4">
       <View className="flex-row justify-between items-center">
         <Text className="text-lg font-semibold text-gray-700">
           Classmates ({students.length})
@@ -378,7 +378,7 @@ export default function ClassDetails() {
   );
 
   const renderQuizzes = () => (
-    <View className="space-y-4">
+    <View className="gap-4">
       <View className="flex-row justify-between items-center">
         <Text className="text-lg font-semibold text-gray-700">
           Quizzes ({quizzes.length})

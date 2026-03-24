@@ -43,7 +43,7 @@ export default function ChangePassword() {
 
       const response = await client.put(
         `/auth/update-password/${user.id}`,
-        data
+        data,
       );
 
       if (response.data.success) {
@@ -62,7 +62,7 @@ export default function ChangePassword() {
       Alert.alert(
         "Error",
         error.response?.data?.error ||
-          "Failed to update password. Please try again."
+          "Failed to update password. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -240,7 +240,7 @@ export default function ChangePassword() {
               <Text className="text-sm font-semibold text-blue-800 mb-2">
                 Password Requirements:
               </Text>
-              <View className="space-y-1">
+              <View className="gap-1">
                 <Text className="text-xs text-blue-700">
                   • At least 6 characters long
                 </Text>

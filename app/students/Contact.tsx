@@ -71,7 +71,7 @@ export default function Contact() {
       Alert.alert(
         "Error",
         error.response?.data?.error ||
-          "Failed to send message. Please try again."
+          "Failed to send message. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -325,7 +325,7 @@ export default function Contact() {
               Other Ways to Reach Us
             </Text>
 
-            <View className="space-y-5">
+            <View className="gap-5">
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-4">
                   <MaterialIcons name="email" size={24} color="#2563eb" />

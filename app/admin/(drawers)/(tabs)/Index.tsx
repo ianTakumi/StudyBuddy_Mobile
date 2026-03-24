@@ -71,7 +71,6 @@ export default function Dashboard() {
       { icon: "person-add", title: "Add User", color: "#4A90E2" },
       { icon: "document-text", title: "Review Content", color: "#34C759" },
       { icon: "stats-chart", title: "View Reports", color: "#FF9500" },
-      { icon: "settings", title: "System Settings", color: "#8E8E93" },
     ],
   };
 
@@ -278,7 +277,7 @@ export default function Dashboard() {
       </View>
 
       {/* System Stats */}
-      <View className="px-4 mt-2 mb-8">
+      {/* <View className="px-4 mt-2 mb-8">
         <Text className="text-lg font-semibold text-gray-800 mb-3">
           System Status
         </Text>
@@ -303,7 +302,7 @@ export default function Dashboard() {
             </Text>
           </View>
         </View>
-      </View>
+      </View> */}
     </ScrollView>
   );
 }

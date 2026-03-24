@@ -189,7 +189,7 @@ export default function AboutUs() {
             Why Choose StudyBuddy?
           </Text>
 
-          <View className="space-y-4">
+          <View className="gap-4">
             <View className="flex-row items-center bg-blue-50 rounded-xl p-4">
               <View className="w-12 h-12 bg-blue-100 rounded-lg items-center justify-center mr-4">
                 <Ionicons name="calendar-outline" size={24} color="#4A90E2" />

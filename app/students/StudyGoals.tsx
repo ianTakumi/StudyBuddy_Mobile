@@ -63,7 +63,7 @@ export default function StudyGoals() {
     try {
       const response = await client.patch(`/goals/${goalId}/toggle`);
       setGoals(
-        goals.map((goal) => (goal.id === goalId ? response.data.goal : goal))
+        goals.map((goal) => (goal.id === goalId ? response.data.goal : goal)),
       );
     } catch (error) {
       console.error("Toggle goal error:", error);

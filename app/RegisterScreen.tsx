@@ -107,7 +107,7 @@ const RegisterScreen: React.FC = () => {
       {/* Role Selection */}
       <View className="mb-6">
         <Text className="text-gray-700 font-medium mb-3">I am a:</Text>
-        <View className="flex-row space-x-4">
+        <View className="flex-row gap-4">
           <Controller
             control={control}
             name="role"
@@ -274,6 +274,8 @@ const RegisterScreen: React.FC = () => {
                 className="flex-1 py-3"
                 value={value}
                 onChangeText={onChange}
+                placeholderTextColor="#9CA3AF"
+                style={{ color: "#000000" }} // Black font color
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
@@ -298,7 +300,13 @@ const RegisterScreen: React.FC = () => {
         name="confirmPassword"
         rules={{
           required: "Confirm your password",
-          validate: (v) => v === watch("password") || "Passwords do not match",
+          validate: (v) => {
+            const trimmedConfirm = v?.trim();
+            const trimmedPassword = watch("password")?.trim();
+            return (
+              trimmedConfirm === trimmedPassword || "Passwords do not match"
+            );
+          },
         }}
         render={({ field: { onChange, value } }) => (
           <View className="mb-6">
@@ -313,6 +321,8 @@ const RegisterScreen: React.FC = () => {
                 className="flex-1 py-3"
                 value={value}
                 onChangeText={onChange}
+                placeholderTextColor="#9CA3AF"
+                style={{ color: "#000000" }}
               />
               <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}

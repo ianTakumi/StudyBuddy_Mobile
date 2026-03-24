@@ -81,7 +81,7 @@ export default function Students() {
 
       // Fetch students from API
       const studentsResponse = await client.get(
-        `/classes/${user.id}/${classId}/students`
+        `/classes/${user.id}/${classId}/students`,
       );
       if (studentsResponse.data.success) {
         setStudents(studentsResponse.data.data);
@@ -166,11 +166,11 @@ export default function Students() {
           onPress: async () => {
             try {
               const response = await client.delete(
-                `/classes/${classId}/students/${studentId}`
+                `/classes/${classId}/students/${studentId}`,
               );
               if (response.data.success) {
                 setStudents(
-                  students.filter((student) => student.id !== studentId)
+                  students.filter((student) => student.id !== studentId),
                 );
                 Alert.alert("Success", "Student removed successfully");
               }
@@ -180,7 +180,7 @@ export default function Students() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -353,7 +353,7 @@ export default function Students() {
                     </View>
                   </View>
 
-                  <View className="flex-row items-center space-x-2">
+                  <View className="flex-row items-center gap-2">
                     <View className="bg-green-100 rounded-lg px-2 py-1">
                       <Text className="text-green-700 text-xs font-medium">
                         Active

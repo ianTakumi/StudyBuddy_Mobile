@@ -70,7 +70,7 @@ export default function Flashcards() {
           (set: FlashcardSet) => ({
             ...set,
             flashcards: set.flashcards || [],
-          })
+          }),
         );
         setFlashcardSets(setsWithFlashcards);
       }
@@ -137,8 +137,8 @@ export default function Flashcards() {
                   ...response.data.data,
                   flashcards: getFlashcards(set), // Preserve existing flashcards
                 }
-              : set
-          )
+              : set,
+          ),
         );
         setShowEditSetModal(false);
         setEditSet({ id: "", title: "", description: "", subject: "" });
@@ -171,7 +171,7 @@ export default function Flashcards() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -197,8 +197,8 @@ export default function Flashcards() {
                   ...set,
                   flashcards: [...getFlashcards(set), response.data.data],
                 }
-              : set
-          )
+              : set,
+          ),
         );
         setShowAddCardModal(false);
         setNewFlashcard({ question: "", answer: "" });
@@ -222,7 +222,7 @@ export default function Flashcards() {
           onPress: async () => {
             try {
               const response = await client.delete(
-                `/flashcards/cards/${cardId}`
+                `/flashcards/cards/${cardId}`,
               );
               if (response.data.success) {
                 setFlashcardSets((prev) =>
@@ -231,11 +231,11 @@ export default function Flashcards() {
                       ? {
                           ...set,
                           flashcards: getFlashcards(set).filter(
-                            (card) => card.id !== cardId
+                            (card) => card.id !== cardId,
                           ),
                         }
-                      : set
-                  )
+                      : set,
+                  ),
                 );
                 Alert.alert("Success", "Flashcard deleted!");
               }
@@ -244,7 +244,7 @@ export default function Flashcards() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -252,7 +252,7 @@ export default function Flashcards() {
   const handleUpdateFlashcard = async (
     setId: string,
     cardId: string,
-    updates: { question?: string; answer?: string }
+    updates: { question?: string; answer?: string },
   ) => {
     try {
       const response = await client.put(`/flashcards/cards/${cardId}`, updates);
@@ -263,11 +263,11 @@ export default function Flashcards() {
               ? {
                   ...set,
                   flashcards: getFlashcards(set).map((card) =>
-                    card.id === cardId ? response.data.data : card
+                    card.id === cardId ? response.data.data : card,
                   ),
                 }
-              : set
-          )
+              : set,
+          ),
         );
         Alert.alert("Success", "Flashcard updated!");
       }
@@ -297,7 +297,7 @@ export default function Flashcards() {
       setShowStudyModal(false);
       Alert.alert(
         "Completed!",
-        "You've reviewed all flashcards in this set! 🎉"
+        "You've reviewed all flashcards in this set! 🎉",
       );
     }
   };
@@ -345,14 +345,14 @@ export default function Flashcards() {
                   },
                 ],
                 "plain-text",
-                card.answer
+                card.answer,
               );
             }
           },
         },
       ],
       "plain-text",
-      card.question
+      card.question,
     );
   };
 
@@ -372,7 +372,7 @@ export default function Flashcards() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Quick Actions */}
-        <View className="mx-4 mb-6 flex-row space-x-3">
+        <View className="mx-4 mb-6 flex-row gap-4">
           <TouchableOpacity
             className="flex-1 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
             onPress={() => setShowAddSetModal(true)}
@@ -406,7 +406,7 @@ export default function Flashcards() {
                       <Text className="text-gray-600 text-sm mt-1">
                         {set.description}
                       </Text>
-                      <View className="flex-row items-center mt-2 space-x-4">
+                      <View className="flex-row items-center mt-2 gap-5">
                         <View className="bg-blue-100 rounded-lg px-2 py-1">
                           <Text className="text-blue-700 text-xs font-medium">
                             {set.subject}
@@ -419,7 +419,7 @@ export default function Flashcards() {
                     </View>
                   </View>
 
-                  <View className="flex-row space-x-2 flex-wrap">
+                  <View className="flex-row gap-2 flex-wrap">
                     <TouchableOpacity
                       className="bg-green-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
                       onPress={() => startStudying(set)}
@@ -485,7 +485,7 @@ export default function Flashcards() {
                                 A: {card.answer}
                               </Text>
                             </View>
-                            <View className="flex-row space-x-1">
+                            <View className="flex-row gap-1">
                               <TouchableOpacity
                                 onPress={() =>
                                   openEditFlashcardModal(set.id, card)
@@ -553,6 +553,9 @@ export default function Flashcards() {
               </TouchableOpacity>
             </View>
 
+            <Text className="text-sm font-medium text-gray-700 mb-1">
+              <Text className="text-red-500">*</Text> Set Title
+            </Text>
             <TextInput
               placeholder="Set Title *"
               value={newSet.title}
@@ -563,6 +566,9 @@ export default function Flashcards() {
               placeholderTextColor="#9CA3AF"
             />
 
+            <Text className="text-sm font-medium text-gray-700 mb-1">
+              <Text className="text-red-500">*</Text> Subject
+            </Text>
             <TextInput
               placeholder="Subject * (e.g., Mathematics, Science)"
               value={newSet.subject}
@@ -584,7 +590,7 @@ export default function Flashcards() {
               multiline
             />
 
-            <View className="flex-row justify-between space-x-3">
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                 onPress={() => setShowAddSetModal(false)}
@@ -654,7 +660,7 @@ export default function Flashcards() {
               multiline
             />
 
-            <View className="flex-row justify-between space-x-3">
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                 onPress={() => setShowEditSetModal(false)}
@@ -715,7 +721,7 @@ export default function Flashcards() {
               multiline
             />
 
-            <View className="flex-row justify-between space-x-3">
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                 onPress={() => setShowAddCardModal(false)}
@@ -757,7 +763,7 @@ export default function Flashcards() {
                   </Text>
                 </View>
 
-                <View className="flex-row justify-between space-x-3 mb-4">
+                <View className="flex-row justify-between gap-3 mb-4">
                   <TouchableOpacity
                     className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                     onPress={() => setShowAnswer(!showAnswer)}
@@ -768,7 +774,7 @@ export default function Flashcards() {
                   </TouchableOpacity>
                 </View>
 
-                <View className="flex-row justify-between space-x-3">
+                <View className="flex-row justify-between gap-3">
                   <TouchableOpacity
                     className="flex-1 py-3 px-4 bg-red-500 rounded-xl"
                     onPress={() => setShowStudyModal(false)}

@@ -84,7 +84,7 @@ export default function UsersScreen() {
     setSelectedUsers((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+        : [...prev, userId],
     );
   };
 
@@ -94,7 +94,7 @@ export default function UsersScreen() {
     setSelectedUsers(
       selectedUsers.length === filteredUsers.length
         ? []
-        : filteredUsers.map((user) => user.id).filter(Boolean)
+        : filteredUsers.map((user) => user.id).filter(Boolean),
     );
   };
 
@@ -140,14 +140,14 @@ export default function UsersScreen() {
 
               Alert.alert(
                 "Success",
-                `User(s) ${action.toLowerCase()}ed successfully`
+                `User(s) ${action.toLowerCase()}ed successfully`,
               );
             } catch (error: any) {
               Alert.alert("Error", `Failed to ${action.toLowerCase()} user(s)`);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -231,7 +231,7 @@ export default function UsersScreen() {
       </View>
 
       <View className="flex-row justify-between items-center border-t border-gray-100 pt-3">
-        <View className="flex-row space-x-4">
+        <View className="flex-row gap-4">
           <View className="items-center">
             <Ionicons name="copy-outline" size={16} color="#6B7280" />
             <Text className="text-gray-600 text-xs mt-1">
@@ -246,7 +246,7 @@ export default function UsersScreen() {
           </View>
         </View>
 
-        <View className="flex-row space-x-2">
+        <View className="flex-row gap-2">
           <TouchableOpacity
             className="p-2 bg-gray-100 rounded-lg"
             onPress={() => handleUserAction("Edit", user.id)}
@@ -258,7 +258,7 @@ export default function UsersScreen() {
             onPress={() =>
               handleUserAction(
                 user.status === "suspended" ? "Activate" : "Suspend",
-                user.id
+                user.id,
               )
             }
           >
@@ -317,7 +317,7 @@ export default function UsersScreen() {
 
       {/* Search and Filters */}
       <View className="bg-white px-4 py-3 shadow-sm">
-        <View className="flex-row space-x-3 mb-3">
+        <View className="flex-row gap-3 mb-3">
           <View className="flex-1 bg-gray-100 rounded-lg px-3 py-2 flex-row items-center">
             <Ionicons name="search" size={20} color="#9CA3AF" />
             <TextInput
@@ -341,7 +341,7 @@ export default function UsersScreen() {
             showsHorizontalScrollIndicator={false}
             className="flex-1"
           >
-            <View className="flex-row space-x-2">
+            <View className="flex-row gap-2">
               {["all", "student", "teacher", "admin"].map((role) => (
                 <TouchableOpacity
                   key={role}
@@ -374,7 +374,7 @@ export default function UsersScreen() {
             <Text className="text-blue-800 font-medium">
               {selectedUsers.length} user(s) selected
             </Text>
-            <View className="flex-row space-x-2">
+            <View className="flex-row gap-2">
               <TouchableOpacity
                 className="px-3 py-1 bg-green-500 rounded-lg flex-row items-center"
                 onPress={() => handleUserAction("Activate")}

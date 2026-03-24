@@ -12,6 +12,18 @@ import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import client from "@/utils/axiosInstance";
 
+interface StudySession {
+  id: string;
+  subject: string;
+  topic: string;
+  date: string;
+  time: string;
+  duration: number;
+  completed: boolean;
+  pomodoroSessions: number;
+  user_id: string;
+}
+
 export default function Index() {
   const user = useSelector((state) => state.auth.user);
   const firstName = user?.first_name?.split(" ")[0] || "Student";
@@ -21,6 +33,7 @@ export default function Index() {
   const [studySessions, setStudySessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
 
   // Fetch data function
   const fetchData = async () => {
@@ -29,7 +42,7 @@ export default function Index() {
 
       // Fetch flashcards data
       const flashcardsResponse = await client.get(
-        `/flashcards/sets/${user.id}`
+        `/flashcards/sets/${user.id}`,
       );
 
       // Fetch study sessions data
@@ -53,9 +66,21 @@ export default function Index() {
     }
   };
 
+  const fetchSessions = async () => {
+    try {
+      const response = await client.get(`/study-sessions/${user.id}`);
+      if (response.data.success) {
+        setSessions(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
   useEffect(() => {
     console.log("Study sessions state:", studySessions);
   }, [studySessions]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchData();
@@ -143,7 +168,7 @@ export default function Index() {
     });
   };
 
-  const startPomodoroSession = (session: string) => {
+  const startPomodoroSession = (session) => {
     router.push("/students/(drawers)/(tabs)/Schedule");
   };
 
@@ -156,25 +181,30 @@ export default function Index() {
     );
   }
 
-  const today = new Date().toLocaleDateString("en-CA"); // This should give YYYY-MM-DD in local time
+  // Get today's date in YYYY-MM-DD format using local time
+  const today = new Date().toLocaleDateString("en-CA");
 
-  // Filter today's sessions
+  // Filter today's sessions (not completed)
   const todaySessions = studySessions.filter(
-    (session) => session.date === today
+    (session) => session.date === today && !session.completed,
   );
+
+  // Get completed sessions for today
+  const completedTodaySessions = studySessions.filter(
+    (session) => session.date === today && session.completed,
+  ).length;
+
+  const totalTodaySessions = todaySessions.length + completedTodaySessions;
+
   // DEBUG
   console.log("=== DYNAMIC DATE DEBUG ===");
   console.log("Current UTC time:", new Date().toISOString());
   console.log("Philippine Today's date:", today);
   console.log("All sessions:", studySessions);
-  console.log("Filtered today sessions:", todaySessions);
-  console.log("Session count:", todaySessions.length);
+  console.log("Filtered today sessions (incomplete):", todaySessions);
+  console.log("Completed today sessions:", completedTodaySessions);
+  console.log("Total today sessions:", totalTodaySessions);
   console.log("=== END DEBUG ===");
-
-  const completedTodaySessions = todaySessions.filter(
-    (session) => session.completed
-  ).length;
-  const totalTodaySessions = todaySessions.length;
 
   // Calculate card count for each flashcard set
   const flashcardsWithCount = flashcards.map((set) => ({
@@ -254,7 +284,7 @@ export default function Index() {
             </TouchableOpacity>
           </View>
 
-          {todaySessions.length === 0 ? (
+          {totalTodaySessions === 0 ? (
             <View className="bg-blue-50 rounded-2xl p-6 items-center justify-center">
               <Ionicons name="calendar-outline" size={48} color="#4A90E2" />
               <Text className="text-blue-800 font-medium text-lg mt-2 text-center">
@@ -292,48 +322,70 @@ export default function Index() {
                     style={{
                       width: `${totalTodaySessions > 0 ? (completedTodaySessions / totalTodaySessions) * 100 : 0}%`,
                     }}
-                  ></View>
+                  />
                 </View>
               </View>
 
-              {/* Upcoming Sessions */}
-              {todaySessions
-                .filter((session) => !session.completed)
-                .map((session) => (
+              {/* Upcoming Sessions (incomplete) */}
+              {todaySessions.length > 0 ? (
+                todaySessions.map((session) => (
                   <View
                     key={session.id}
                     className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3"
                   >
                     <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center">
+                      <View className="flex-row items-center flex-1">
                         <View
                           className={`${getBgColorForSubject(session.subject)} p-2 rounded-lg mr-3`}
                         >
                           {getIconForSubject(session.subject)}
                         </View>
-                        <View>
+                        <View className="flex-1">
                           <Text className="font-bold text-gray-800">
                             {session.subject || "Study Session"}
                           </Text>
                           <Text className="text-gray-500">
                             {formatTime(session.time)}
                           </Text>
-                          {session.duration && (
+                          <View className="flex-row items-center mt-1">
                             <Text className="text-gray-400 text-xs">
                               {session.duration} minutes
                             </Text>
-                          )}
+                            {session.pomodoroSessions && (
+                              <>
+                                <Text className="text-gray-400 text-xs mx-1">
+                                  •
+                                </Text>
+                                <Text className="text-gray-400 text-xs">
+                                  {session.pomodoroSessions} pomodoros
+                                </Text>
+                              </>
+                            )}
+                          </View>
                         </View>
                       </View>
                       <TouchableOpacity
-                        className="bg-blue-500 px-3 py-1 rounded-lg"
+                        className="bg-blue-500 px-4 py-2 rounded-lg ml-3"
                         onPress={() => startPomodoroSession(session)}
                       >
-                        <Text className="text-white text-sm">Start</Text>
+                        <Text className="text-white text-sm font-medium">
+                          Start
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
-                ))}
+                ))
+              ) : (
+                <View className="bg-green-50 rounded-2xl p-4 items-center">
+                  <Ionicons name="checkmark-circle" size={40} color="#10B981" />
+                  <Text className="text-green-800 font-medium text-center mt-2">
+                    Great job! 🎉
+                  </Text>
+                  <Text className="text-green-600 text-center text-sm">
+                    You've completed all your sessions for today!
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </View>

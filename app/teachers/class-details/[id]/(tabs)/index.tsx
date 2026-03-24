@@ -43,7 +43,7 @@ export default function ClassInfo() {
       setSubmitting(true);
       const response = await client.put(
         `/classes/${user?.id}/${params.id}`,
-        formData
+        formData,
       );
 
       if (response.data.success) {
@@ -83,7 +83,7 @@ export default function ClassInfo() {
             router.back();
           },
         },
-      ]
+      ],
     );
   };
 
@@ -109,7 +109,7 @@ export default function ClassInfo() {
           </View>
 
           {/* Edit & Delete Buttons */}
-          <View className="flex-row space-x-3">
+          <View className="flex-row gap-3">
             <TouchableOpacity
               className="flex-row items-center bg-blue-300 rounded-xl px-4 py-3 flex-1"
               onPress={handleEditClass}
@@ -137,7 +137,7 @@ export default function ClassInfo() {
                 Class Information
               </Text>
 
-              <View className="space-y-4">
+              <View className="gap-4">
                 <View className="flex-row items-center">
                   <View className="w-12 h-12 bg-indigo-100 rounded-xl items-center justify-center mr-4">
                     <Ionicons name="school-outline" size={24} color="#6366F1" />
@@ -385,10 +385,7 @@ export default function ClassInfo() {
               Edit Class
             </Text>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              className="space-y-4"
-            >
+            <ScrollView showsVerticalScrollIndicator={false} className="gap-4">
               {/* Class Name */}
               <View>
                 <Text className="text-gray-700 font-medium mb-2">
@@ -487,7 +484,7 @@ export default function ClassInfo() {
               </View>
 
               {/* Action Buttons */}
-              <View className="flex-row justify-between space-x-3 pt-4">
+              <View className="flex-row justify-between gap-3 pt-4">
                 <TouchableOpacity
                   className="flex-1 py-3 px-4 border border-gray-300 rounded-xl disabled:bg-gray-100"
                   onPress={() => setShowEditModal(false)}

@@ -57,7 +57,7 @@ export default function ForgotPassword() {
         </View>
 
         {/* Form */}
-        <View className="space-y-6">
+        <View className="gap-6">
           <View className="mb-5">
             <Text className="text-sm font-medium text-gray-700 mb-2">
               Email Address

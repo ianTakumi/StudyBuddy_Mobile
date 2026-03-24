@@ -4,7 +4,7 @@ import axios from "axios";
 const getBaseURL = () => {
   if (__DEV__) {
     // Development - using your local IP
-    return "http://192.168.100.8:5000/api";
+    return "http://192.168.1.63:5000/api";
   } else {
     // Production - using your deployed server
     return "https://studybuddy-backend-vhyz.onrender.com/api";
@@ -28,7 +28,7 @@ client.interceptors.request.use(
   (error) => {
     console.log("❌ Request error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add response interceptor for debugging
@@ -40,7 +40,7 @@ client.interceptors.response.use(
   (error) => {
     console.log("❌ Response error:", error.message);
     return Promise.reject(error);
-  }
+  },
 );
 
 export default client;

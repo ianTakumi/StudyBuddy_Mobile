@@ -172,7 +172,7 @@ export default function AnalyticsScreen() {
 
       {/* Time Range Selector */}
       <View className="bg-white px-4 py-3 shadow-sm">
-        <View className="flex-row justify-center space-x-2">
+        <View className="flex-row justify-center gap-2">
           {["week", "month", "year"].map((range) => (
             <TouchableOpacity
               key={range}

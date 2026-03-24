@@ -100,8 +100,8 @@ export default function QuizDetails() {
   const handleAnswerSelect = (questionId: string, answer: string) => {
     setAnswers((prev) =>
       prev.map((item) =>
-        item.questionId === questionId ? { ...item, answer } : item
-      )
+        item.questionId === questionId ? { ...item, answer } : item,
+      ),
     );
   };
 
@@ -140,7 +140,7 @@ export default function QuizDetails() {
               text: "OK",
               onPress: () => router.back(), // Simple lang, balik lang sa previous screen
             },
-          ]
+          ],
         );
       }
     } catch (error) {
@@ -293,7 +293,7 @@ export default function QuizDetails() {
 
           {/* Options */}
           {currentQuestion.type === "multiple_choice" && (
-            <View className="space-y-3">
+            <View className="gap-3">
               {currentQuestion.options?.map((option, index) => (
                 <TouchableOpacity
                   key={index}
@@ -313,7 +313,7 @@ export default function QuizDetails() {
           )}
 
           {currentQuestion.type === "true_false" && (
-            <View className="space-y-3">
+            <View className="gap-3">
               {["True", "False"].map((option) => (
                 <TouchableOpacity
                   key={option}

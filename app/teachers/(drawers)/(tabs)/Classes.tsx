@@ -75,7 +75,7 @@ export default function Classes() {
   const filteredClasses = classes.filter(
     (classItem) =>
       classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      classItem.subject.toLowerCase().includes(searchQuery.toLowerCase())
+      classItem.subject.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleCreateClass = async () => {
@@ -117,12 +117,12 @@ export default function Classes() {
       setSubmitting(true);
       const response = await client.put(
         `/classes/${user?.id}/${selectedClass.id}`,
-        formData
+        formData,
       );
 
       if (response.data.success) {
         const updatedClasses = classes.map((classItem) =>
-          classItem.id === selectedClass.id ? response.data.data : classItem
+          classItem.id === selectedClass.id ? response.data.data : classItem,
         );
         setClasses(updatedClasses);
         setShowEditModal(false);
@@ -149,12 +149,12 @@ export default function Classes() {
           onPress: async () => {
             try {
               const response = await client.delete(
-                `/classes/${user?.id}/${classItem.id}`
+                `/classes/${user?.id}/${classItem.id}`,
               );
 
               if (response.data.success) {
                 const updatedClasses = classes.filter(
-                  (c) => c.id !== classItem.id
+                  (c) => c.id !== classItem.id,
                 );
                 setClasses(updatedClasses);
                 Alert.alert("Success", "Class deleted successfully!");
@@ -165,7 +165,7 @@ export default function Classes() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -240,6 +240,7 @@ export default function Classes() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               className="flex-1 ml-2 text-gray-700"
+              placeholderTextColor="#9CA3AF" // This sets the placeholder color
             />
           </View>
         </View>
@@ -302,7 +303,7 @@ export default function Classes() {
                 </View>
 
                 {/* Action Buttons */}
-                <View className="flex-row mt-3 space-x-2">
+                <View className="flex-row mt-3 gap-2">
                   <TouchableOpacity
                     className="bg-blue-100 px-3 py-1 rounded-lg"
                     onPress={() => openEditModal(classItem)}
@@ -403,6 +404,17 @@ const ClassModal: React.FC<ClassModalProps> = ({
   submitText,
   submitting = false,
 }) => {
+  // Check if all required fields are filled
+  const isFormValid = () => {
+    return (
+      formData.name?.trim() !== "" &&
+      formData.subject?.trim() !== "" &&
+      formData.gradeLevel?.trim() !== "" &&
+      formData.schedule?.trim() !== "" &&
+      formData.room?.trim() !== ""
+    );
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
       <View className="flex-1 justify-center items-center bg-black/50">
@@ -410,54 +422,100 @@ const ClassModal: React.FC<ClassModalProps> = ({
           <Text className="text-xl font-bold text-gray-900 mb-4">{title}</Text>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <TextInput
-              placeholder="Class Name *"
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3"
-            />
-            <TextInput
-              placeholder="Subject *"
-              value={formData.subject}
-              onChangeText={(text) =>
-                setFormData({ ...formData, subject: text })
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3"
-            />
-            <TextInput
-              placeholder="Grade Level *"
-              value={formData.gradeLevel}
-              onChangeText={(text) =>
-                setFormData({ ...formData, gradeLevel: text })
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3"
-            />
-            <TextInput
-              placeholder="Schedule (e.g., Mon, Wed, Fri 9:00-10:30 AM)"
-              value={formData.schedule}
-              onChangeText={(text) =>
-                setFormData({ ...formData, schedule: text })
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3"
-            />
-            <TextInput
-              placeholder="Room Number"
-              value={formData.room}
-              onChangeText={(text) => setFormData({ ...formData, room: text })}
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3"
-            />
-            <TextInput
-              placeholder="Description (optional)"
-              value={formData.description}
-              onChangeText={(text) =>
-                setFormData({ ...formData, description: text })
-              }
-              multiline
-              numberOfLines={3}
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-6"
-            />
+            {/* Class Name */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                <Text className="text-red-500">* </Text> Class Name
+              </Text>
+              <TextInput
+                placeholder="Enter class name"
+                value={formData.name}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, name: text })
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3"
+              />
+            </View>
 
-            <View className="flex-row justify-between space-x-3">
+            {/* Subject */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                <Text className="text-red-500">* </Text> Subject
+              </Text>
+              <TextInput
+                placeholder="Enter subject"
+                value={formData.subject}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, subject: text })
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3"
+              />
+            </View>
+
+            {/* Grade Level */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                <Text className="text-red-500">* </Text> Grade Level
+              </Text>
+              <TextInput
+                placeholder="Enter grade level (e.g., Grade 10, College 1st Year)"
+                value={formData.gradeLevel}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, gradeLevel: text })
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3"
+              />
+            </View>
+
+            {/* Schedule */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                <Text className="text-red-500">* </Text> Schedule
+              </Text>
+              <TextInput
+                placeholder="e.g., Mon, Wed, Fri 9:00-10:30 AM"
+                value={formData.schedule}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, schedule: text })
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3"
+              />
+            </View>
+
+            {/* Room Number */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                <Text className="text-red-500">* </Text> Room Number
+              </Text>
+              <TextInput
+                placeholder="Enter room number"
+                value={formData.room}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, room: text })
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3"
+              />
+            </View>
+
+            {/* Description */}
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-1">
+                Description
+              </Text>
+              <TextInput
+                placeholder="Optional - add class description"
+                value={formData.description}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, description: text })
+                }
+                multiline
+                numberOfLines={3}
+                className="border border-gray-300 rounded-xl px-4 py-3"
+              />
+            </View>
+
+            {/* Buttons */}
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                 onPress={onClose}
@@ -468,9 +526,11 @@ const ClassModal: React.FC<ClassModalProps> = ({
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl disabled:bg-blue-300"
+                className={`flex-1 py-3 px-4 rounded-xl ${
+                  isFormValid() ? "bg-blue-500" : "bg-gray-300"
+                }`}
                 onPress={onSubmit}
-                disabled={submitting}
+                disabled={!isFormValid() || submitting}
               >
                 {submitting ? (
                   <ActivityIndicator size="small" color="white" />

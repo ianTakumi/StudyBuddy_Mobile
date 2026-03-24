@@ -164,7 +164,7 @@ export default function Profile() {
         </View>
 
         {/* App Settings Section */}
-        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
+        {/* <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
           <View className="px-6 py-4 border-b border-gray-200">
             <Text className="text-lg font-semibold text-gray-900">
               App Settings
@@ -174,7 +174,6 @@ export default function Profile() {
             </Text>
           </View>
 
-          {/* Study Reminders */}
           <View className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200">
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
@@ -200,28 +199,7 @@ export default function Profile() {
               thumbColor="#FFFFFF"
             />
           </View>
-
-          {/* Dark Mode */}
-          {/* <View className="px-6 py-4 flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="moon-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">Dark Mode</Text>
-                <Text className="text-gray-500 text-sm">
-                  Switch to dark theme
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={darkModeEnabled}
-              onValueChange={setDarkModeEnabled}
-              trackColor={{ false: "#D1D5DB", true: "#4A90E2" }}
-              thumbColor="#FFFFFF"
-            />
-          </View> */}
-        </View>
+        </View> */}
 
         {/* Support Section */}
         <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
@@ -305,7 +283,7 @@ export default function Profile() {
                 <Text className="text-gray-600 text-center mb-6">
                   Are you sure you want to logout from StudyBuddy?
                 </Text>
-                <View className="flex-row justify-between space-x-3">
+                <View className="flex-row justify-between gap-3">
                   <TouchableOpacity
                     className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                     onPress={cancelLogout}

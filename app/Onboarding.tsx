@@ -77,7 +77,7 @@ const Onboarding: React.FC = () => {
         </Text>
 
         {/* Progress Dots */}
-        <View className="flex-row justify-center mt-6 space-x-2">
+        <View className="flex-row justify-center mt-6 gap-2">
           {slides.map((_, i) => (
             <View
               key={i}

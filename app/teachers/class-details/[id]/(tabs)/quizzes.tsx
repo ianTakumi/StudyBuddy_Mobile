@@ -132,7 +132,7 @@ export default function Quizzes() {
       if (response.data.success) {
         console.log(
           "📊 API Response:",
-          JSON.stringify(response.data.data, null, 2)
+          JSON.stringify(response.data.data, null, 2),
         );
         setQuizzes(response.data.data);
       }
@@ -149,7 +149,7 @@ export default function Quizzes() {
     try {
       setSubmissionsLoading(true);
       const response = await client.get(
-        `/quizzes/${classId}/${quizId}/submissions`
+        `/quizzes/${classId}/${quizId}/submissions`,
       );
 
       if (response.data.success) {
@@ -179,13 +179,13 @@ export default function Quizzes() {
   const filteredQuizzes = quizzes.filter(
     (quiz) =>
       quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quiz.description.toLowerCase().includes(searchQuery.toLowerCase())
+      quiz.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Process questions before sending to API
   const processQuestionsForAPI = (
     questions: QuestionForm[],
-    quizType: string
+    quizType: string,
   ) => {
     return questions
       .filter((q) => q.question.trim() !== "")
@@ -261,7 +261,7 @@ export default function Quizzes() {
 
       const processedQuestions = processQuestionsForAPI(
         validQuestions,
-        formData.quiz_type
+        formData.quiz_type,
       );
 
       const quizData = {
@@ -314,7 +314,7 @@ export default function Quizzes() {
 
       const processedQuestions = processQuestionsForAPI(
         validQuestions,
-        formData.quiz_type
+        formData.quiz_type,
       );
 
       const quizData = {
@@ -327,12 +327,12 @@ export default function Quizzes() {
 
       const response = await client.put(
         `/quizzes/${classId}/${selectedQuiz.id}`,
-        quizData
+        quizData,
       );
 
       if (response.data.success) {
         const updatedQuizzes = quizzes.map((quiz) =>
-          quiz.id === selectedQuiz.id ? response.data.data : quiz
+          quiz.id === selectedQuiz.id ? response.data.data : quiz,
         );
         setQuizzes(updatedQuizzes);
         setShowEditModal(false);
@@ -359,7 +359,7 @@ export default function Quizzes() {
           onPress: async () => {
             try {
               const response = await client.delete(
-                `/quizzes/${classId}/${quiz.id}`
+                `/quizzes/${classId}/${quiz.id}`,
               );
 
               if (response.data.success) {
@@ -373,7 +373,7 @@ export default function Quizzes() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -409,7 +409,7 @@ export default function Quizzes() {
   const updateOption = (
     questionIndex: number,
     optionIndex: number,
-    value: string
+    value: string,
   ) => {
     const updatedQuestions = [...questions];
     if (!updatedQuestions[questionIndex].options) {
@@ -666,7 +666,7 @@ export default function Quizzes() {
               </View>
 
               <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center space-x-4">
+                <View className="flex-row items-center gap-4">
                   <View className="flex-row items-center">
                     <Ionicons
                       name="calendar-outline"
@@ -707,7 +707,7 @@ export default function Quizzes() {
               </View>
 
               <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center space-x-2">
+                <View className="flex-row items-center gap-2">
                   {isOverdue && (
                     <View className="bg-red-100 rounded-lg px-2 py-1">
                       <Text className="text-red-700 text-xs font-semibold">
@@ -726,7 +726,7 @@ export default function Quizzes() {
               </View>
 
               {/* Action Buttons */}
-              <View className="flex-row space-x-2 mt-3">
+              <View className="flex-row gap-2 mt-3">
                 <TouchableOpacity
                   className="bg-blue-100 px-3 py-1 rounded-lg flex-row items-center"
                   onPress={() => openEditModal(item)}
@@ -847,7 +847,7 @@ interface QuizModalProps {
   updateOption: (
     questionIndex: number,
     optionIndex: number,
-    value: string
+    value: string,
   ) => void;
   removeQuestion: (index: number) => void;
   submitText: string;
@@ -875,12 +875,9 @@ const QuizModal: React.FC<QuizModalProps> = ({
         <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-h-[90%]">
           <Text className="text-2xl font-bold text-gray-900 mb-6">{title}</Text>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="space-y-6"
-          >
+          <ScrollView showsVerticalScrollIndicator={false} className="gap-6">
             {/* Basic Info Section */}
-            <View className="space-y-4">
+            <View className="gap-4">
               <Text className="text-lg font-bold text-gray-900">
                 Basic Information
               </Text>
@@ -933,7 +930,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                 />
               </View>
 
-              <View className="flex-row space-x-3">
+              <View className="flex-row gap-3">
                 <View className="flex-1">
                   <Text className="text-gray-700 font-medium mb-2">
                     Time Limit (minutes) *
@@ -1003,7 +1000,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
             </View>
 
             {/* Questions Section */}
-            <View className="space-y-4">
+            <View className="gap-4">
               <View className="flex-row justify-between items-center">
                 <Text className="text-lg font-bold text-gray-900">
                   Questions
@@ -1051,7 +1048,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                     placeholderTextColor="#9CA3AF"
                   />
 
-                  <View className="flex-row space-x-2 mb-3">
+                  <View className="flex-row gap-2 mb-3">
                     <View className="flex-1">
                       <Text className="text-gray-600 text-sm mb-1">Points</Text>
                       <TextInput
@@ -1060,7 +1057,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                           updateQuestion(
                             questionIndex,
                             "points",
-                            parseInt(text) || 1
+                            parseInt(text) || 1,
                           )
                         }
                         keyboardType="numeric"
@@ -1073,7 +1070,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                         Correct Answer
                       </Text>
                       {formData.quiz_type === "true_false" ? (
-                        <View className="flex-row space-x-2">
+                        <View className="flex-row gap-2">
                           {["True", "False"].map((option) => (
                             <TouchableOpacity
                               key={option}
@@ -1086,7 +1083,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                                 updateQuestion(
                                   questionIndex,
                                   "correctAnswer",
-                                  option
+                                  option,
                                 )
                               }
                             >
@@ -1117,7 +1114,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                   </View>
 
                   {formData.quiz_type === "multiple_choice" && (
-                    <View className="space-y-2">
+                    <View className="gap-2">
                       <Text className="text-gray-600 text-sm">Options</Text>
                       {question.options?.map((option, optionIndex) => (
                         <TextInput
@@ -1138,7 +1135,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
             </View>
 
             {/* Action Buttons */}
-            <View className="flex-row justify-between space-x-3 pt-4">
+            <View className="flex-row justify-between gap-3 pt-4">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl disabled:bg-gray-100"
                 onPress={onClose}
@@ -1196,10 +1193,7 @@ const QuestionsModal: React.FC<QuestionsModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="space-y-4"
-          >
+          <ScrollView showsVerticalScrollIndicator={false} className="gap-4">
             <Text className="text-gray-600 mb-4">
               {quiz.quiz_questions?.length || 0} question
               {quiz.quiz_questions?.length !== 1 ? "s" : ""}
@@ -1228,7 +1222,7 @@ const QuestionsModal: React.FC<QuestionsModalProps> = ({
                 </View>
 
                 {question.options && question.options.length > 0 && (
-                  <View className="space-y-1">
+                  <View className="gap-1">
                     <Text className="text-gray-600 text-sm font-medium">
                       Options:
                     </Text>
@@ -1246,7 +1240,7 @@ const QuestionsModal: React.FC<QuestionsModalProps> = ({
                           {option.option_text}
                           {option.is_correct && " ✓"}
                         </Text>
-                      )
+                      ),
                     )}
                   </View>
                 )}
@@ -1316,10 +1310,7 @@ const SubmissionsModal: React.FC<SubmissionsModalProps> = ({
               </Text>
             </View>
           ) : (
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              className="space-y-4"
-            >
+            <ScrollView showsVerticalScrollIndicator={false} className="gap-4">
               {submissions.map((submission, index) => (
                 <View
                   key={submission.id}
@@ -1339,7 +1330,7 @@ const SubmissionsModal: React.FC<SubmissionsModalProps> = ({
                       className={`px-3 py-1 rounded-full ${
                         getScoreColor(
                           submission.score,
-                          submission.total_points
+                          submission.total_points,
                         ).replace("text-", "bg-") + "20"
                       }`}
                     >
@@ -1378,7 +1369,7 @@ const SubmissionsModal: React.FC<SubmissionsModalProps> = ({
                     </View>
                     <Text className="text-gray-400 text-xs mt-1 text-center">
                       {Math.round(
-                        (submission.score / submission.total_points) * 100
+                        (submission.score / submission.total_points) * 100,
                       )}
                       % Correct
                     </Text>

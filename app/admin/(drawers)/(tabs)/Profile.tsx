@@ -372,7 +372,7 @@ export default function AdminProfile() {
                 <Text className="text-gray-600 text-center mb-6">
                   Are you sure you want to logout from StudyBuddy Admin?
                 </Text>
-                <View className="flex-row justify-between space-x-3">
+                <View className="flex-row justify-between gap-3">
                   <TouchableOpacity
                     className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                     onPress={cancelLogout}

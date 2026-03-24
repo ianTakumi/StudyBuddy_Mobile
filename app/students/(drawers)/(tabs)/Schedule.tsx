@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   Platform,
+  RefreshControl,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,9 +37,10 @@ export default function Schedule() {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [showTimerModal, setShowTimerModal] = useState(false);
   const [currentSession, setCurrentSession] = useState<StudySession | null>(
-    null
+    null,
   );
   const [sessions, setSessions] = useState<StudySession[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [newSession, setNewSession] = useState({
     subject: "",
     topic: "",
@@ -95,6 +97,32 @@ export default function Schedule() {
     }
   };
 
+  // Combined refresh function
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchSessions();
+    } catch (error) {
+      console.error("Refresh error:", error);
+      Alert.alert(
+        "Refresh Failed",
+        "Unable to refresh data. Please try again.",
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user.id]);
+
+  // Add this function before the return statement
+  const isFormValid = () => {
+    return (
+      newSession.subject.trim() !== "" &&
+      newSession.topic.trim() !== "" &&
+      newSession.time !== "" &&
+      newSession.duration > 0
+    );
+  };
+
   const createSession = async (sessionData: Omit<StudySession, "id">) => {
     try {
       const response = await client.post("/study-sessions", sessionData);
@@ -109,12 +137,12 @@ export default function Schedule() {
 
   const updateSession = async (
     sessionId: string,
-    updates: Partial<StudySession>
+    updates: Partial<StudySession>,
   ) => {
     try {
       const response = await client.put(
         `/study-sessions/${sessionId}`,
-        updates
+        updates,
       );
       if (response.data.success) {
         return response.data.data;
@@ -153,7 +181,7 @@ export default function Schedule() {
       (session) =>
         !session.completed &&
         session.date === currentDate &&
-        session.time === currentTime
+        session.time === currentTime,
     );
 
     if (upcomingSession && !showSessionModal && !showTimerModal) {
@@ -219,7 +247,7 @@ export default function Schedule() {
                 setCurrentPomodoro(1);
                 Alert.alert(
                   "Congratulations! 🎊",
-                  "All pomodoro sessions completed!"
+                  "All pomodoro sessions completed!",
                 );
               }
             },
@@ -231,7 +259,7 @@ export default function Schedule() {
               setCurrentPomodoro(1);
             },
           },
-        ]
+        ],
       );
     }
 
@@ -297,8 +325,8 @@ export default function Schedule() {
         });
         setSessions((prev) =>
           prev.map((session) =>
-            session.id === sessionId ? updatedSession : session
-          )
+            session.id === sessionId ? updatedSession : session,
+          ),
         );
       }
     } catch (error) {
@@ -319,14 +347,14 @@ export default function Schedule() {
             try {
               await deleteSession(sessionId);
               setSessions((prev) =>
-                prev.filter((session) => session.id !== sessionId)
+                prev.filter((session) => session.id !== sessionId),
               );
             } catch (error) {
               Alert.alert("Error", "Failed to delete session");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -335,8 +363,8 @@ export default function Schedule() {
       await updateSession(sessionId, { completed: true });
       setSessions((prev) =>
         prev.map((session) =>
-          session.id === sessionId ? { ...session, completed: true } : session
-        )
+          session.id === sessionId ? { ...session, completed: true } : session,
+        ),
       );
     } catch (error) {
       console.error("Error completing session:", error);
@@ -362,6 +390,20 @@ export default function Schedule() {
     return sessions.filter((session) => session.date === date);
   };
 
+  // Get upcoming sessions (today and future dates, not completed)
+  const getUpcomingSessions = () => {
+    const today = new Date().toISOString().split("T")[0];
+    return sessions
+      .filter((session) => !session.completed && session.date >= today)
+      .sort((a, b) => {
+        // Sort by date first, then by time
+        if (a.date === b.date) {
+          return a.time.localeCompare(b.time);
+        }
+        return a.date.localeCompare(b.date);
+      });
+  };
+
   const markedDates = sessions.reduce((acc, session) => {
     acc[session.date] = {
       marked: true,
@@ -379,6 +421,7 @@ export default function Schedule() {
   }
 
   const selectedDateSessions = getSessionsForDate(selectedDate);
+  const upcomingSessions = getUpcomingSessions();
   const totalTime = currentSession ? currentSession.duration * 60 : 0;
   const progress = calculateProgress(timeLeft, totalTime);
   const radius = 80;
@@ -393,7 +436,20 @@ export default function Schedule() {
         <Text className="text-gray-600 mt-1">Pomodoro Study Tracker</Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#2563eb"]} // Android
+            tintColor="#2563eb" // iOS
+            title="Pull to refresh..." // iOS
+            titleColor="#6b7280" // iOS
+          />
+        }
+      >
         {/* Calendar */}
         <View className="mx-4 mb-6">
           <Calendar
@@ -444,7 +500,7 @@ export default function Schedule() {
           </Text>
         </TouchableOpacity>
 
-        {/* Sessions List */}
+        {/* Sessions List for Selected Date */}
         <View className="mx-4 mb-8">
           <Text className="text-lg font-semibold text-gray-900 mb-4">
             {selectedDate
@@ -452,100 +508,196 @@ export default function Schedule() {
               : "Select a date to view sessions"}
           </Text>
 
-          {selectedDateSessions.length > 0 ? (
-            selectedDateSessions.map((session) => (
-              <View
+          {selectedDateSessions.length > 0
+            ? selectedDateSessions.map((session) => (
+                <View
+                  key={session.id}
+                  className={`bg-white rounded-xl p-4 mb-3 border-2 ${
+                    session.completed ? "border-green-200" : "border-gray-200"
+                  } shadow-sm`}
+                >
+                  <View className="flex-row justify-between items-start mb-3">
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <Text className="text-lg font-semibold text-gray-900">
+                          {session.subject}
+                        </Text>
+                        {session.completed && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={16}
+                            color="#10B981"
+                            className="ml-2"
+                          />
+                        )}
+                      </View>
+                      <Text className="text-gray-600 text-sm mt-1">
+                        {session.topic}
+                      </Text>
+                      <View className="flex-row items-center mt-2 gap-4">
+                        <Text className="text-blue-500 text-sm font-semibold">
+                          ⏰ {session.time}
+                        </Text>
+                        <Text className="text-purple-500 text-sm">
+                          🍅 {session.duration}min × {session.pomodoroSessions}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row gap-2">
+                      <TouchableOpacity
+                        className="bg-blue-100 px-3 py-2 rounded-lg flex-row items-center"
+                        onPress={() => startPomodoroSession(session)}
+                      >
+                        <Ionicons name="play" size={14} color="#3B82F6" />
+                        <Text className="text-blue-600 text-xs font-medium ml-1">
+                          Start
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className={`px-3 py-2 rounded-lg flex-row items-center ${
+                          session.completed ? "bg-gray-100" : "bg-green-100"
+                        }`}
+                        onPress={() => toggleSessionComplete(session.id)}
+                      >
+                        <Ionicons
+                          name={session.completed ? "refresh" : "checkmark"}
+                          size={14}
+                          color={session.completed ? "#6B7280" : "#10B981"}
+                        />
+                        <Text
+                          className={`text-xs font-medium ml-1 ${
+                            session.completed
+                              ? "text-gray-600"
+                              : "text-green-600"
+                          }`}
+                        >
+                          {session.completed ? "Redo" : "Complete"}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className="bg-red-100 px-3 py-2 rounded-lg flex-row items-center"
+                        onPress={() => handleDeleteSession(session.id)}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={14}
+                          color="#EF4444"
+                        />
+                        <Text className="text-red-600 text-xs font-medium ml-1">
+                          Delete
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ))
+            : selectedDate && (
+                <View className="bg-gray-50 rounded-xl p-8 items-center">
+                  <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 text-center mt-4 font-medium">
+                    No study sessions scheduled for this date
+                  </Text>
+                  <Text className="text-gray-400 text-center mt-2 text-sm">
+                    Add a session to get started with Pomodoro!
+                  </Text>
+                </View>
+              )}
+        </View>
+
+        {/* Upcoming Sessions Section */}
+        <View className="mx-4 mb-6">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-lg font-semibold text-gray-900">
+              Upcoming Sessions 📅
+            </Text>
+            {upcomingSessions.length > 0 && (
+              <Text className="text-blue-500 text-sm">
+                {upcomingSessions.length} upcoming
+              </Text>
+            )}
+          </View>
+
+          {upcomingSessions.length > 0 ? (
+            upcomingSessions.slice(0, 5).map((session) => (
+              <TouchableOpacity
                 key={session.id}
-                className={`bg-white rounded-xl p-4 mb-3 border-2 ${
-                  session.completed ? "border-green-200" : "border-gray-200"
-                } shadow-sm`}
+                className="bg-white rounded-xl p-4 mb-3 border border-gray-200 shadow-sm"
+                onPress={() => startPomodoroSession(session)}
               >
-                <View className="flex-row justify-between items-start mb-3">
+                <View className="flex-row justify-between items-start">
                   <View className="flex-1">
                     <View className="flex-row items-center">
-                      <Text className="text-lg font-semibold text-gray-900">
+                      <View className="bg-blue-100 rounded-full p-1 mr-2">
+                        <Ionicons name="book" size={14} color="#3B82F6" />
+                      </View>
+                      <Text className="font-semibold text-gray-900">
                         {session.subject}
                       </Text>
-                      {session.completed && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={16}
-                          color="#10B981"
-                          className="ml-2"
-                        />
-                      )}
                     </View>
-                    <Text className="text-gray-600 text-sm mt-1">
+                    <Text className="text-gray-600 text-sm mt-1 ml-6">
                       {session.topic}
                     </Text>
-                    <View className="flex-row items-center mt-2 space-x-4">
-                      <Text className="text-blue-500 text-sm font-semibold">
-                        ⏰ {session.time}
-                      </Text>
-                      <Text className="text-purple-500 text-sm">
-                        🍅 {session.duration}min × {session.pomodoroSessions}
-                      </Text>
+                    <View className="flex-row items-center mt-2 ml-6 gap-3">
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="calendar-outline"
+                          size={12}
+                          color="#6B7280"
+                        />
+                        <Text className="text-gray-500 text-xs ml-1">
+                          {session.date}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="time-outline"
+                          size={12}
+                          color="#6B7280"
+                        />
+                        <Text className="text-gray-500 text-xs ml-1">
+                          {session.time}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="timer-outline"
+                          size={12}
+                          color="#6B7280"
+                        />
+                        <Text className="text-gray-500 text-xs ml-1">
+                          {session.duration}min
+                        </Text>
+                      </View>
                     </View>
                   </View>
+                  <TouchableOpacity
+                    className="bg-blue-500 px-3 py-1.5 rounded-lg"
+                    onPress={() => startPomodoroSession(session)}
+                  >
+                    <Text className="text-white text-xs font-medium">
+                      Start
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-row space-x-2">
-                    <TouchableOpacity
-                      className="bg-blue-100 px-3 py-2 rounded-lg flex-row items-center"
-                      onPress={() => startPomodoroSession(session)}
-                    >
-                      <Ionicons name="play" size={14} color="#3B82F6" />
-                      <Text className="text-blue-600 text-xs font-medium ml-1">
-                        Start
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      className={`px-3 py-2 rounded-lg flex-row items-center ${
-                        session.completed ? "bg-gray-100" : "bg-green-100"
-                      }`}
-                      onPress={() => toggleSessionComplete(session.id)}
-                    >
-                      <Ionicons
-                        name={session.completed ? "refresh" : "checkmark"}
-                        size={14}
-                        color={session.completed ? "#6B7280" : "#10B981"}
-                      />
-                      <Text
-                        className={`text-xs font-medium ml-1 ${
-                          session.completed ? "text-gray-600" : "text-green-600"
-                        }`}
-                      >
-                        {session.completed ? "Redo" : "Complete"}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      className="bg-red-100 px-3 py-2 rounded-lg flex-row items-center"
-                      onPress={() => handleDeleteSession(session.id)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={14}
-                        color="#EF4444"
-                      />
-                      <Text className="text-red-600 text-xs font-medium ml-1">
-                        Delete
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
+              </TouchableOpacity>
             ))
           ) : (
-            <View className="bg-gray-50 rounded-xl p-8 items-center">
-              <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
-              <Text className="text-gray-500 text-center mt-4 font-medium">
-                No study sessions scheduled for this date
+            <View className="bg-gray-50 rounded-xl p-6 items-center">
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={40}
+                color="#9CA3AF"
+              />
+              <Text className="text-gray-500 text-center mt-2 font-medium">
+                No upcoming sessions
               </Text>
-              <Text className="text-gray-400 text-center mt-2 text-sm">
-                Add a session to get started with Pomodoro!
+              <Text className="text-gray-400 text-center text-sm mt-1">
+                Add a session to start studying!
               </Text>
             </View>
           )}
@@ -569,36 +721,68 @@ export default function Schedule() {
                 </TouchableOpacity>
               </View>
 
-              <TextInput
-                placeholder="Subject (e.g., Mathematics)"
-                value={newSession.subject}
-                onChangeText={(text) =>
-                  setNewSession((prev) => ({ ...prev, subject: text }))
-                }
-                className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-                placeholderTextColor="#9CA3AF"
-              />
+              {/* Subject Input with Floating Label */}
+              <View className="mb-3">
+                <View className="flex-row justify-between items-center mb-1">
+                  <Text className="text-gray-700 font-medium text-sm">
+                    Subject <Text className="text-red-500">*</Text>
+                  </Text>
+                  <Text className="text-gray-400 text-xs">Required</Text>
+                </View>
+                <TextInput
+                  placeholder="Mathematics, Science, English..."
+                  value={newSession.subject}
+                  onChangeText={(text) =>
+                    setNewSession((prev) => ({ ...prev, subject: text }))
+                  }
+                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <TextInput
-                placeholder="Topic (e.g., Algebra Review)"
-                value={newSession.topic}
-                onChangeText={(text) =>
-                  setNewSession((prev) => ({ ...prev, topic: text }))
-                }
-                className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-                placeholderTextColor="#9CA3AF"
-              />
+              {/* Topic Input with Floating Label */}
+              <View className="mb-3">
+                <View className="flex-row justify-between items-center mb-1">
+                  <Text className="text-gray-700 font-medium text-sm">
+                    Topic <Text className="text-red-500">*</Text>
+                  </Text>
+                </View>
+                <TextInput
+                  placeholder="Algebra Review, Biology Lab, Essay Writing..."
+                  value={newSession.topic}
+                  onChangeText={(text) =>
+                    setNewSession((prev) => ({ ...prev, topic: text }))
+                  }
+                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <TouchableOpacity
-                onPress={() => setShowTimePicker(true)}
-                className="border border-gray-300 rounded-xl px-4 py-3 mb-3"
-              >
-                <Text
-                  className={`${newSession.time ? "text-gray-900" : "text-gray-400"}`}
-                >
-                  {newSession.time || "Select Time"}
+              {/* Time Picker with Label */}
+              <View className="mb-3">
+                <Text className="text-gray-700 font-medium mb-2 ml-1">
+                  <Ionicons name="time-outline" size={14} color="#6B7280" />{" "}
+                  Time <Text className="text-red-500">*</Text>
                 </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowTimePicker(true)}
+                  className="border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                >
+                  <View className="flex-row items-center">
+                    <Ionicons
+                      name="alarm-outline"
+                      size={20}
+                      color={newSession.time ? "#3B82F6" : "#9CA3AF"}
+                    />
+                    <Text
+                      className={`ml-2 ${newSession.time ? "text-gray-900" : "text-gray-400"}`}
+                    >
+                      {newSession.time || "Select Time"}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
 
               {showTimePicker && (
                 <DateTimePicker
@@ -611,9 +795,10 @@ export default function Schedule() {
 
               <View className="flex-row items-center justify-between mb-3">
                 <Text className="text-gray-700">
-                  Session Duration (minutes)
+                  Session Duration (minutes){" "}
+                  <Text className="text-red-500">*</Text>
                 </Text>
-                <View className="flex-row items-center space-x-2">
+                <View className="flex-row items-center gap-2">
                   <TouchableOpacity
                     onPress={() =>
                       setNewSession((prev) => ({ ...prev, duration: 25 }))
@@ -655,17 +840,14 @@ export default function Schedule() {
 
               <View className="flex-row items-center justify-between mb-3">
                 <Text className="text-gray-700">Pomodoro Sessions</Text>
-                <View className="flex-row items-center space-x-2">
-                  <Text className="text-gray-900 font-medium">
-                    {newSession.pomodoroSessions}
-                  </Text>
+                <View className="flex-row items-center gap-2">
                   <TouchableOpacity
                     onPress={() =>
                       setNewSession((prev) => ({
                         ...prev,
                         pomodoroSessions: Math.max(
                           1,
-                          prev.pomodoroSessions - 1
+                          prev.pomodoroSessions - 1,
                         ),
                       }))
                     }
@@ -673,6 +855,9 @@ export default function Schedule() {
                   >
                     <Text>-</Text>
                   </TouchableOpacity>
+                  <Text className="text-gray-900 font-medium">
+                    {newSession.pomodoroSessions}
+                  </Text>
                   <TouchableOpacity
                     onPress={() =>
                       setNewSession((prev) => ({
@@ -687,7 +872,7 @@ export default function Schedule() {
                 </View>
               </View>
 
-              <View className="flex-row justify-between space-x-3">
+              <View className="flex-row justify-between gap-3">
                 <TouchableOpacity
                   className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                   onPress={() => setShowAddModal(false)}
@@ -697,10 +882,17 @@ export default function Schedule() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className="flex-1 py-3 px-4 bg-blue-500 rounded-xl"
+                  className={`flex-1 py-3 px-4 rounded-xl ${
+                    isFormValid() ? "bg-blue-500" : "bg-gray-300"
+                  }`}
                   onPress={handleAddSession}
+                  disabled={!isFormValid()}
                 >
-                  <Text className="text-white font-medium text-center">
+                  <Text
+                    className={`font-medium text-center ${
+                      isFormValid() ? "text-white" : "text-gray-500"
+                    }`}
+                  >
                     Add Session
                   </Text>
                 </TouchableOpacity>
@@ -752,7 +944,7 @@ export default function Schedule() {
               </>
             )}
 
-            <View className="flex-row justify-between space-x-3">
+            <View className="flex-row justify-between gap-3">
               <TouchableOpacity
                 className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                 onPress={handleSkipSession}
@@ -834,7 +1026,7 @@ export default function Schedule() {
                   </View>
                 </View>
 
-                <View className="flex-row justify-center space-x-4 mb-6">
+                <View className="flex-row justify-center gap-4 mb-6">
                   <TouchableOpacity
                     className="bg-blue-500 rounded-xl px-6 py-3 flex-row items-center"
                     onPress={() => setIsRunning(!isRunning)}
