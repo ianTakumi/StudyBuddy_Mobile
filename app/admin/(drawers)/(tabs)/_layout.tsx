@@ -24,10 +24,8 @@ export default function TabLayout() {
             case "Users":
               return <Ionicons name="people-outline" size={22} color={color} />;
 
-            case "Analytics":
-              return (
-                <Ionicons name="stats-chart-outline" size={22} color={color} />
-              );
+            case "Classes":
+              return <Ionicons name="school-outline" size={22} color={color} />;
 
             case "Content":
               return (
@@ -49,7 +47,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="Index" options={{ title: "Dashboard" }} />
       <Tabs.Screen name="Users" options={{ title: "Users" }} />
-      <Tabs.Screen name="Analytics" options={{ title: "Analytics" }} />
+      <Tabs.Screen name="Classes" options={{ title: "Classes" }} />
       <Tabs.Screen name="Content" options={{ title: "Content" }} />
       <Tabs.Screen name="Profile" options={{ title: "Profile" }} />
     </Tabs>

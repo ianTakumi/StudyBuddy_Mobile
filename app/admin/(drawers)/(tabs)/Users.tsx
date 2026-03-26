@@ -20,9 +20,7 @@ interface User {
   email: string;
   phone?: string;
   role: string;
-  status: string;
-  joinDate: string;
-  lastActive: string;
+  created_at: string;
   flashcardsCreated: number;
   studySessions: number;
 }
@@ -151,16 +149,22 @@ export default function UsersScreen() {
     );
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-500";
-      case "inactive":
-        return "bg-gray-500";
-      case "suspended":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Unknown";
+
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) return "Invalid date";
+
+      // Format as MM/DD/YYYY
+      return date.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      });
+    } catch (error) {
+      return "Invalid date";
     }
   };
 
@@ -219,15 +223,6 @@ export default function UsersScreen() {
           <Text className="text-gray-600 text-sm">{getUserEmail(user)}</Text>
           <Text className="text-gray-500 text-sm">{getUserPhone(user)}</Text>
         </View>
-
-        <View className="items-end">
-          <View
-            className={`w-3 h-3 rounded-full ${getStatusColor(user.status || "inactive")} mb-1`}
-          />
-          <Text className="text-gray-500 text-xs capitalize">
-            {user.status || "inactive"}
-          </Text>
-        </View>
       </View>
 
       <View className="flex-row justify-between items-center border-t border-gray-100 pt-3">
@@ -277,10 +272,7 @@ export default function UsersScreen() {
 
       <View className="flex-row justify-between mt-2">
         <Text className="text-gray-500 text-xs">
-          Joined: {user.joinDate || "Unknown"}
-        </Text>
-        <Text className="text-gray-500 text-xs">
-          Last active: {user.lastActive || "Unknown"}
+          Joined: {formatDate(user.created_at)}
         </Text>
       </View>
     </TouchableOpacity>
@@ -325,14 +317,9 @@ export default function UsersScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               className="flex-1 ml-2 text-gray-800"
+              placeholderTextColor={"#9CA3AF"}
             />
           </View>
-          <TouchableOpacity
-            className="bg-gray-100 rounded-lg px-3 py-2 items-center justify-center"
-            onPress={fetchUsers}
-          >
-            <Ionicons name="refresh" size={20} color="#6B7280" />
-          </TouchableOpacity>
         </View>
 
         <View className="flex-row justify-between">
@@ -356,7 +343,7 @@ export default function UsersScreen() {
                     }`}
                   >
                     {role === "all"
-                      ? "All User"
+                      ? "All Users"
                       : role.charAt(0).toUpperCase() + role.slice(1)}
                     s
                   </Text>

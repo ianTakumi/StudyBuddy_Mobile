@@ -6,28 +6,193 @@ import {
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import client from "@/utils/axiosInstance";
+
+// Schedule item interface matching API response
+interface ScheduleItem {
+  day: string;
+  startTime: string;
+  startApm: "AM" | "PM";
+  endTime: string;
+  endApm: "AM" | "PM";
+}
 
 export default function ClassInfo() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const user = useSelector((state) => state.auth.user);
+  const user = useSelector((state: any) => state.auth.user);
   const [showEditModal, setShowEditModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [currentSchedule, setCurrentSchedule] = useState<ScheduleItem>({
+    day: "Monday",
+    startTime: "8",
+    startApm: "AM",
+    endTime: "10",
+    endApm: "AM",
+  });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [startTimeError, setStartTimeError] = useState<string>("");
+  const [endTimeError, setEndTimeError] = useState<string>("");
+
+  // Parse schedule from params (it's a JSON string)
+  const parseSchedule = (scheduleStr: string): ScheduleItem[] => {
+    try {
+      if (scheduleStr && scheduleStr !== "undefined") {
+        const parsed = JSON.parse(scheduleStr);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    } catch (error) {
+      console.error("Error parsing schedule:", error);
+      return [];
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: params.className || "",
     subject: params.subject || "",
     gradeLevel: params.gradeLevel || "",
-    schedule: params.schedule || "",
+    schedule: parseSchedule(params.schedule as string),
     room: params.room || "",
     description: params.description || "",
   });
+
+  const daysOfWeek = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+
+  // Helper function to format schedule for display
+  const formatSchedule = (schedule: ScheduleItem[]): string => {
+    if (!schedule || schedule.length === 0) return "No schedule set";
+
+    return schedule
+      .map((item) => {
+        return `${item.day} ${item.startTime}${item.startApm} - ${item.endTime}${item.endApm}`;
+      })
+      .join(", ");
+  };
+
+  // Time validation function (12-hour format)
+  const validateTimeFormat = (time: string): boolean => {
+    const timeRegex = /^(1[0-2]|0?[1-9])$/;
+    return timeRegex.test(time);
+  };
+
+  const validateSchedule = (): boolean => {
+    const { startTime, endTime } = currentSchedule;
+    let isValid = true;
+
+    if (!startTime) {
+      setStartTimeError("Please enter start time");
+      isValid = false;
+    } else if (!validateTimeFormat(startTime)) {
+      setStartTimeError("Invalid time. Use 1-12 (e.g., 8, 08, 10, 12)");
+      isValid = false;
+    } else {
+      setStartTimeError("");
+    }
+
+    if (!endTime) {
+      setEndTimeError("Please enter end time");
+      isValid = false;
+    } else if (!validateTimeFormat(endTime)) {
+      setEndTimeError("Invalid time. Use 1-12 (e.g., 8, 08, 10, 12)");
+      isValid = false;
+    } else {
+      setEndTimeError("");
+    }
+
+    return isValid;
+  };
+
+  const addSchedule = () => {
+    if (!currentSchedule.day) {
+      Alert.alert("Error", "Please select a day");
+      return;
+    }
+
+    if (!validateSchedule()) {
+      return;
+    }
+
+    if (editingIndex !== null) {
+      const updatedSchedules = [...formData.schedule];
+      updatedSchedules[editingIndex] = currentSchedule;
+      setFormData({ ...formData, schedule: updatedSchedules });
+      setEditingIndex(null);
+    } else {
+      const isDuplicate = formData.schedule.some(
+        (item) =>
+          item.day === currentSchedule.day &&
+          item.startTime === currentSchedule.startTime &&
+          item.startApm === currentSchedule.startApm &&
+          item.endTime === currentSchedule.endTime &&
+          item.endApm === currentSchedule.endApm,
+      );
+
+      if (isDuplicate) {
+        Alert.alert("Error", "Schedule already exists for this day and time");
+        return;
+      }
+
+      setFormData({
+        ...formData,
+        schedule: [...formData.schedule, currentSchedule],
+      });
+    }
+
+    setCurrentSchedule({
+      day: "Monday",
+      startTime: "8",
+      startApm: "AM",
+      endTime: "10",
+      endApm: "AM",
+    });
+    setShowScheduleModal(false);
+    setStartTimeError("");
+    setEndTimeError("");
+  };
+
+  const editSchedule = (index: number) => {
+    setCurrentSchedule(formData.schedule[index]);
+    setEditingIndex(index);
+    setShowScheduleModal(true);
+    setStartTimeError("");
+    setEndTimeError("");
+  };
+
+  const removeSchedule = (index: number) => {
+    Alert.alert(
+      "Remove Schedule",
+      "Are you sure you want to remove this schedule?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            const updatedSchedules = formData.schedule.filter(
+              (_, i) => i !== index,
+            );
+            setFormData({ ...formData, schedule: updatedSchedules });
+          },
+        },
+      ],
+    );
+  };
 
   const handleEditClass = () => {
     setShowEditModal(true);
@@ -36,6 +201,11 @@ export default function ClassInfo() {
   const handleSaveEdit = async () => {
     if (!formData.name || !formData.subject || !formData.gradeLevel) {
       Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+
+    if (formData.schedule.length === 0) {
+      Alert.alert("Error", "Please add at least one schedule");
       return;
     }
 
@@ -50,12 +220,13 @@ export default function ClassInfo() {
         Alert.alert("Success", "Class updated successfully!");
         setShowEditModal(false);
 
+        // Update params with new data
         router.setParams({
           ...params,
           className: formData.name,
           subject: formData.subject,
           gradeLevel: formData.gradeLevel,
-          schedule: formData.schedule,
+          schedule: JSON.stringify(formData.schedule),
           room: formData.room,
           description: formData.description,
         });
@@ -68,7 +239,7 @@ export default function ClassInfo() {
     }
   };
 
-  const handleDeleteClass = () => {
+  const handleDeleteClass = async () => {
     Alert.alert(
       "Delete Class",
       `Are you sure you want to delete "${params.className}"? This action cannot be undone.`,
@@ -77,27 +248,41 @@ export default function ClassInfo() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            console.log("Delete class:", params.id);
-            Alert.alert("Success", "Class deleted successfully!");
-            router.back();
+          onPress: async () => {
+            try {
+              const response = await client.delete(
+                `/classes/${user?.id}/${params.id}`,
+              );
+
+              if (response.data.success) {
+                Alert.alert("Success", "Class deleted successfully!");
+                router.back();
+              }
+            } catch (error) {
+              console.error("Error deleting class:", error);
+              Alert.alert("Error", "Failed to delete class");
+            }
           },
         },
       ],
     );
   };
 
+  const formatScheduleDisplay = (schedule: ScheduleItem): string => {
+    return `${schedule.day} ${schedule.startTime}${schedule.startApm} - ${schedule.endTime}${schedule.endApm}`;
+  };
+
   return (
     <>
       <ScrollView className="flex-1 bg-white">
         {/* Header Section */}
-        <View className="bg-gradient-to-r from-indigo-500 to-purple-600 pt-16 pb-6 px-6">
+        <View className="bg-indigo-500 pt-16 pb-6 px-6">
           <View className="flex-row items-start justify-between mb-4">
             <View className="flex-1">
-              <Text className="text-3xl font-bold text-black mb-2">
+              <Text className="text-3xl font-bold text-white mb-2">
                 {params.className}
               </Text>
-              <Text className="text-indigo-400 text-lg font-medium">
+              <Text className="text-indigo-200 text-lg font-medium">
                 {params.subject}
               </Text>
             </View>
@@ -107,11 +292,10 @@ export default function ClassInfo() {
               </Text>
             </View>
           </View>
-
           {/* Edit & Delete Buttons */}
           <View className="flex-row gap-3">
             <TouchableOpacity
-              className="flex-row items-center bg-blue-300 rounded-xl px-4 py-3 flex-1"
+              className="flex-row items-center bg-blue-500 rounded-xl px-4 py-3 flex-1"
               onPress={handleEditClass}
             >
               <Ionicons name="create-outline" size={18} color="white" />
@@ -161,7 +345,7 @@ export default function ClassInfo() {
                       Schedule
                     </Text>
                     <Text className="text-gray-900 font-semibold text-base">
-                      {params.schedule}
+                      {formatSchedule(parseSchedule(params.schedule as string))}
                     </Text>
                   </View>
                 </View>
@@ -180,6 +364,20 @@ export default function ClassInfo() {
                     </Text>
                     <Text className="text-gray-900 font-semibold text-base">
                       {params.room}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-center">
+                  <View className="w-12 h-12 bg-emerald-100 rounded-xl items-center justify-center mr-4">
+                    <Ionicons name="code-outline" size={24} color="#10B981" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-600 text-sm font-medium">
+                      Class Code
+                    </Text>
+                    <Text className="text-gray-900 font-semibold text-base font-mono">
+                      {params.class_code}
                     </Text>
                   </View>
                 </View>
@@ -267,7 +465,7 @@ export default function ClassInfo() {
                     color="#F59E0B"
                   />
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">3</Text>
+                <Text className="text-2xl font-bold text-gray-900">0</Text>
                 <Text className="text-gray-600 text-sm font-medium">
                   Active Quizzes
                 </Text>
@@ -279,7 +477,7 @@ export default function ClassInfo() {
                 <View className="w-10 h-10 bg-blue-100 rounded-lg items-center justify-center mb-2">
                   <Ionicons name="create-outline" size={20} color="#3B82F6" />
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">5</Text>
+                <Text className="text-2xl font-bold text-gray-900">0</Text>
                 <Text className="text-gray-600 text-sm font-medium">
                   Pending Assignments
                 </Text>
@@ -295,7 +493,7 @@ export default function ClassInfo() {
                     color="#10B981"
                   />
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">78%</Text>
+                <Text className="text-2xl font-bold text-gray-900">0%</Text>
                 <Text className="text-gray-600 text-sm font-medium">
                   Avg. Score
                 </Text>
@@ -311,7 +509,7 @@ export default function ClassInfo() {
                     color="#EF4444"
                   />
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">2</Text>
+                <Text className="text-2xl font-bold text-gray-900">0</Text>
                 <Text className="text-gray-600 text-sm font-medium">
                   Need Grading
                 </Text>
@@ -325,54 +523,10 @@ export default function ClassInfo() {
           <Text className="text-xl font-bold text-gray-900 mb-4">
             Recent Activity
           </Text>
-          <View className="bg-white rounded-2xl p-1 shadow-lg border border-gray-200">
-            {[
-              {
-                type: "quiz",
-                title: "Algebra Quiz Created",
-                time: "2 hours ago",
-                icon: "document-text-outline",
-                color: "#F59E0B",
-              },
-              {
-                type: "assignment",
-                title: "Science Project Assigned",
-                time: "5 hours ago",
-                icon: "create-outline",
-                color: "#3B82F6",
-              },
-              {
-                type: "quiz",
-                title: "Math Test Grades Released",
-                time: "1 day ago",
-                icon: "bar-chart-outline",
-                color: "#10B981",
-              },
-            ].map((activity, index) => (
-              <View
-                key={index}
-                className={`flex-row items-center p-4 ${index < 2 ? "border-b border-gray-200" : ""}`}
-              >
-                <View
-                  className="w-10 h-10 rounded-lg items-center justify-center mr-3"
-                  style={{ backgroundColor: `${activity.color}15` }}
-                >
-                  <Ionicons
-                    name={activity.icon}
-                    size={20}
-                    color={activity.color}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-gray-900 font-semibold text-base">
-                    {activity.title}
-                  </Text>
-                  <Text className="text-gray-600 text-sm mt-1">
-                    {activity.time}
-                  </Text>
-                </View>
-              </View>
-            ))}
+          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
+            <Text className="text-gray-500 text-center py-8">
+              No recent activity
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -380,14 +534,14 @@ export default function ClassInfo() {
       {/* Edit Class Modal */}
       <Modal visible={showEditModal} animationType="slide" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-h-[80%]">
+          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-h-[85%]">
             <Text className="text-2xl font-bold text-gray-900 mb-6">
               Edit Class
             </Text>
 
-            <ScrollView showsVerticalScrollIndicator={false} className="gap-4">
+            <ScrollView showsVerticalScrollIndicator={false}>
               {/* Class Name */}
-              <View>
+              <View className="mb-4">
                 <Text className="text-gray-700 font-medium mb-2">
                   Class Name *
                 </Text>
@@ -403,7 +557,7 @@ export default function ClassInfo() {
               </View>
 
               {/* Subject */}
-              <View>
+              <View className="mb-4">
                 <Text className="text-gray-700 font-medium mb-2">
                   Subject *
                 </Text>
@@ -419,7 +573,7 @@ export default function ClassInfo() {
               </View>
 
               {/* Grade Level */}
-              <View>
+              <View className="mb-4">
                 <Text className="text-gray-700 font-medium mb-2">
                   Grade Level *
                 </Text>
@@ -434,24 +588,74 @@ export default function ClassInfo() {
                 />
               </View>
 
-              {/* Schedule */}
-              <View>
-                <Text className="text-gray-700 font-medium mb-2">Schedule</Text>
-                <TextInput
-                  value={formData.schedule}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, schedule: text })
-                  }
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
-                  placeholder="e.g., Mon, Wed, Fri 9:00-10:30 AM"
-                  placeholderTextColor="#9CA3AF"
-                />
+              {/* Schedule Section */}
+              <View className="mb-4">
+                <Text className="text-gray-700 font-medium mb-2">
+                  Schedule *
+                </Text>
+
+                {/* Schedule List */}
+                {formData.schedule.length > 0 ? (
+                  <View className="mb-2">
+                    {formData.schedule.map((item, index) => (
+                      <View
+                        key={index}
+                        className="flex-row items-center justify-between bg-gray-50 rounded-xl p-3 mb-2"
+                      >
+                        <Text className="text-gray-700 text-sm flex-1">
+                          {formatScheduleDisplay(item)}
+                        </Text>
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={() => editSchedule(index)}
+                            className="bg-blue-500 px-3 py-1 rounded-lg"
+                          >
+                            <Text className="text-white text-xs">Edit</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => removeSchedule(index)}
+                            className="bg-red-500 px-3 py-1 rounded-lg"
+                          >
+                            <Text className="text-white text-xs">Remove</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text className="text-gray-500 text-sm mb-2">
+                    No schedule added yet
+                  </Text>
+                )}
+
+                {/* Add Schedule Button */}
+                <TouchableOpacity
+                  className="bg-blue-500 rounded-xl py-2 px-4 flex-row items-center justify-center"
+                  onPress={() => {
+                    setEditingIndex(null);
+                    setCurrentSchedule({
+                      day: "Monday",
+                      startTime: "8",
+                      startApm: "AM",
+                      endTime: "10",
+                      endApm: "AM",
+                    });
+                    setStartTimeError("");
+                    setEndTimeError("");
+                    setShowScheduleModal(true);
+                  }}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="white" />
+                  <Text className="text-white font-medium ml-2">
+                    Add Schedule
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              {/* Room */}
-              <View>
+              {/* Room Number */}
+              <View className="mb-4">
                 <Text className="text-gray-700 font-medium mb-2">
-                  Room Number
+                  Room Number *
                 </Text>
                 <TextInput
                   value={formData.room}
@@ -465,7 +669,7 @@ export default function ClassInfo() {
               </View>
 
               {/* Description */}
-              <View>
+              <View className="mb-6">
                 <Text className="text-gray-700 font-medium mb-2">
                   Description
                 </Text>
@@ -484,9 +688,9 @@ export default function ClassInfo() {
               </View>
 
               {/* Action Buttons */}
-              <View className="flex-row justify-between gap-3 pt-4">
+              <View className="flex-row justify-between gap-3 pt-4 pb-6">
                 <TouchableOpacity
-                  className="flex-1 py-3 px-4 border border-gray-300 rounded-xl disabled:bg-gray-100"
+                  className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
                   onPress={() => setShowEditModal(false)}
                   disabled={submitting}
                 >
@@ -495,15 +699,258 @@ export default function ClassInfo() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className="flex-1 py-3 px-4 bg-indigo-500 rounded-xl"
+                  className={`flex-1 py-3 px-4 rounded-xl ${
+                    formData.schedule.length > 0
+                      ? "bg-indigo-500"
+                      : "bg-gray-300"
+                  }`}
                   onPress={handleSaveEdit}
+                  disabled={submitting || formData.schedule.length === 0}
                 >
-                  <Text className="text-white font-medium text-center">
-                    Save Changes
-                  </Text>
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text className="text-white font-medium text-center">
+                      Save Changes
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Schedule Input Modal */}
+      <Modal
+        visible={showScheduleModal}
+        animationType="slide"
+        transparent={true}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+            <Text className="text-xl font-bold text-gray-900 mb-4">
+              {editingIndex !== null ? "Edit Schedule" : "Add Schedule"}
+            </Text>
+
+            {/* Day Selection */}
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Day</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {daysOfWeek.map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    className={`px-3 py-2 rounded-lg ${
+                      currentSchedule.day === day
+                        ? "bg-blue-500"
+                        : "bg-gray-200"
+                    }`}
+                    onPress={() =>
+                      setCurrentSchedule({ ...currentSchedule, day })
+                    }
+                  >
+                    <Text
+                      className={`${
+                        currentSchedule.day === day
+                          ? "text-white"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {day.substring(0, 3)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Start Time with AM/PM */}
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Start Time</Text>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <TextInput
+                    placeholder="Hour (1-12)"
+                    value={currentSchedule.startTime}
+                    onChangeText={(text) => {
+                      const cleaned = text.replace(/[^0-9]/g, "");
+                      setCurrentSchedule({
+                        ...currentSchedule,
+                        startTime: cleaned,
+                      });
+                      if (startTimeError) setStartTimeError("");
+                    }}
+                    keyboardType="numeric"
+                    className="border border-gray-300 rounded-xl px-4 py-3"
+                  />
+                  {startTimeError ? (
+                    <Text className="text-red-500 text-xs mt-1">
+                      {startTimeError}
+                    </Text>
+                  ) : (
+                    <Text className="text-gray-400 text-xs mt-1">
+                      Enter hour only (1-12)
+                    </Text>
+                  )}
+                </View>
+                <View className="w-28">
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity
+                      className={`flex-1 py-3 rounded-xl ${
+                        currentSchedule.startApm === "AM"
+                          ? "bg-blue-500"
+                          : "bg-gray-200"
+                      }`}
+                      onPress={() =>
+                        setCurrentSchedule({
+                          ...currentSchedule,
+                          startApm: "AM",
+                        })
+                      }
+                    >
+                      <Text
+                        className={`text-center font-medium ${
+                          currentSchedule.startApm === "AM"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        AM
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className={`flex-1 py-3 rounded-xl ${
+                        currentSchedule.startApm === "PM"
+                          ? "bg-blue-500"
+                          : "bg-gray-200"
+                      }`}
+                      onPress={() =>
+                        setCurrentSchedule({
+                          ...currentSchedule,
+                          startApm: "PM",
+                        })
+                      }
+                    >
+                      <Text
+                        className={`text-center font-medium ${
+                          currentSchedule.startApm === "PM"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        PM
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* End Time with AM/PM */}
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-2">End Time</Text>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <TextInput
+                    placeholder="Hour (1-12)"
+                    value={currentSchedule.endTime}
+                    onChangeText={(text) => {
+                      const cleaned = text.replace(/[^0-9]/g, "");
+                      setCurrentSchedule({
+                        ...currentSchedule,
+                        endTime: cleaned,
+                      });
+                      if (endTimeError) setEndTimeError("");
+                    }}
+                    keyboardType="numeric"
+                    className="border border-gray-300 rounded-xl px-4 py-3"
+                  />
+                  {endTimeError ? (
+                    <Text className="text-red-500 text-xs mt-1">
+                      {endTimeError}
+                    </Text>
+                  ) : (
+                    <Text className="text-gray-400 text-xs mt-1">
+                      Enter hour only (1-12)
+                    </Text>
+                  )}
+                </View>
+                <View className="w-28">
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity
+                      className={`flex-1 py-3 rounded-xl ${
+                        currentSchedule.endApm === "AM"
+                          ? "bg-blue-500"
+                          : "bg-gray-200"
+                      }`}
+                      onPress={() =>
+                        setCurrentSchedule({
+                          ...currentSchedule,
+                          endApm: "AM",
+                        })
+                      }
+                    >
+                      <Text
+                        className={`text-center font-medium ${
+                          currentSchedule.endApm === "AM"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        AM
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className={`flex-1 py-3 rounded-xl ${
+                        currentSchedule.endApm === "PM"
+                          ? "bg-blue-500"
+                          : "bg-gray-200"
+                      }`}
+                      onPress={() =>
+                        setCurrentSchedule({
+                          ...currentSchedule,
+                          endApm: "PM",
+                        })
+                      }
+                    >
+                      <Text
+                        className={`text-center font-medium ${
+                          currentSchedule.endApm === "PM"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        PM
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Buttons */}
+            <View className="flex-row justify-between gap-3">
+              <TouchableOpacity
+                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                onPress={() => {
+                  setShowScheduleModal(false);
+                  setEditingIndex(null);
+                  setStartTimeError("");
+                  setEndTimeError("");
+                }}
+              >
+                <Text className="text-gray-700 font-medium text-center">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl"
+                onPress={addSchedule}
+              >
+                <Text className="text-white font-medium text-center">
+                  {editingIndex !== null ? "Update" : "Add"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
