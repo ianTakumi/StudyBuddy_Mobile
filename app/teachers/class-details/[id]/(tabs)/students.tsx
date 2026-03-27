@@ -12,6 +12,7 @@ import { useGlobalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import client from "@/utils/axiosInstance";
+import * as Clipboard from "expo-clipboard";
 
 interface Student {
   id: string;
@@ -20,6 +21,14 @@ interface Student {
   email: string;
   student_id?: string;
   status?: string;
+}
+
+interface ScheduleItem {
+  day: string;
+  startTime: string;
+  startApm: "AM" | "PM";
+  endTime: string;
+  endApm: "AM" | "PM";
 }
 
 interface ClassInfo {
@@ -31,7 +40,7 @@ interface ClassInfo {
   description?: string;
   gradeLevel?: string;
   room?: string;
-  schedule?: string;
+  schedule?: ScheduleItem[];
 }
 
 export default function Students() {
@@ -47,20 +56,42 @@ export default function Students() {
   const [refreshing, setRefreshing] = useState(false);
   const [showClassCode, setShowClassCode] = useState(false);
 
-  // Build class info from globalParams
+  const parseSchedule = (scheduleStr: string): ScheduleItem[] => {
+    try {
+      if (scheduleStr && scheduleStr !== "undefined") {
+        const parsed = JSON.parse(scheduleStr);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    } catch (error) {
+      console.error("Error parsing schedule:", error);
+      return [];
+    }
+  };
+
+  const formatSchedule = (schedule: ScheduleItem[]): string => {
+    if (!schedule || schedule.length === 0) return "No schedule set";
+    return schedule
+      .map(
+        (item) =>
+          `${item.day} ${item.startTime}${item.startApm} - ${item.endTime}${item.endApm}`,
+      )
+      .join(", ");
+  };
+
   const buildClassInfoFromParams = () => {
     if (!globalParams.id) return null;
 
     return {
       id: globalParams.id as string,
       name: (globalParams.className as string) || "Class",
-      class_code: (globalParams.class_code as string) || "ABC123", // Fallback if no class_code
+      class_code: (globalParams.class_code as string) || "ABC123",
       subject: (globalParams.subject as string) || "Subject",
       student_count: parseInt(globalParams.studentCount as string) || 0,
       description: globalParams.description as string,
       gradeLevel: globalParams.gradeLevel as string,
       room: globalParams.room as string,
-      schedule: globalParams.schedule as string,
+      schedule: parseSchedule(globalParams.schedule as string),
     };
   };
 
@@ -86,53 +117,11 @@ export default function Students() {
       if (studentsResponse.data.success) {
         setStudents(studentsResponse.data.data);
       } else {
-        // Fallback sample data if API fails
-        setStudents([
-          {
-            id: "1",
-            name: "Juan Dela Cruz",
-            email: "juan@email.com",
-            student_id: "20230001",
-            status: "active",
-          },
-          {
-            id: "2",
-            name: "Maria Santos",
-            email: "maria@email.com",
-            student_id: "20230002",
-            status: "active",
-          },
-          {
-            id: "3",
-            name: "Pedro Reyes",
-            email: "pedro@email.com",
-            student_id: "20230003",
-            status: "active",
-          },
-        ]);
+        setStudents([]);
       }
     } catch (error: any) {
       console.error("Error fetching students:", error);
-
-      // Fallback sample data if API completely fails
-      setStudents([
-        {
-          id: "1",
-          name: "Juan Dela Cruz",
-          email: "juan@email.com",
-          student_id: "20230001",
-          status: "active",
-        },
-        {
-          id: "2",
-          name: "Maria Santos",
-          email: "maria@email.com",
-          student_id: "20230002",
-          status: "active",
-        },
-      ]);
-
-      Alert.alert("Info", "Using sample data. Check your API connection.");
+      setStudents([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -148,10 +137,14 @@ export default function Students() {
     fetchStudents();
   }, [classId]);
 
-  const copyToClipboard = (text: string) => {
-    // For React Native, you can use @react-native-clipboard/clipboard
-    // For web: navigator.clipboard.writeText(text);
-    Alert.alert("Copied!", "Class code copied to clipboard");
+  const copyToClipboard = async (text: string) => {
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert("Copied!", "Class code copied to clipboard");
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      Alert.alert("Error", "Failed to copy class code");
+    }
   };
 
   const removeStudent = async (studentId: string, studentName: string) => {
@@ -187,7 +180,7 @@ export default function Students() {
   if (loading) {
     return (
       <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#6366F1" />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text className="text-gray-600 mt-4">Loading students...</Text>
       </View>
     );
@@ -195,7 +188,7 @@ export default function Students() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Header */}
+      {/* Header - Always visible with class code card */}
       <View className="bg-white pt-16 pb-6 px-6 border-b border-gray-200">
         <View className="mb-4">
           <Text className="text-3xl font-bold text-gray-900">
@@ -209,23 +202,23 @@ export default function Students() {
             <Text className="text-gray-500 text-sm mt-1">
               {classInfo?.room && `Room ${classInfo.room}`}
               {classInfo?.room && classInfo?.schedule && " • "}
-              {classInfo?.schedule}
+              {classInfo?.schedule && formatSchedule(classInfo.schedule)}
             </Text>
           )}
         </View>
 
-        {/* Class Code Card */}
-        <View className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4">
+        {/* Class Code Card - Blue themed, no gradient */}
+        <View className="bg-blue-500 rounded-2xl p-4">
           <View className="flex-row justify-between items-center">
             <View className="flex-1">
               <Text className="text-white text-sm font-medium">Class Code</Text>
               <View className="flex-row items-center mt-1">
                 {showClassCode ? (
-                  <Text className="text-black text-2xl font-bold mr-3">
+                  <Text className="text-white text-2xl font-bold mr-3">
                     {classInfo?.class_code}
                   </Text>
                 ) : (
-                  <Text className="text-black text-2xl font-bold mr-3">
+                  <Text className="text-white text-2xl font-bold mr-3">
                     ••••••
                   </Text>
                 )}
@@ -236,19 +229,19 @@ export default function Students() {
                   <Ionicons
                     name={showClassCode ? "eye-off-outline" : "eye-outline"}
                     size={16}
-                    color="gray"
+                    color="white"
                   />
                 </TouchableOpacity>
               </View>
-              <Text className="text-black/80 text-xs mt-2">
+              <Text className="text-white/80 text-xs mt-2">
                 Share this code with students to join your class
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => copyToClipboard(classInfo?.class_code)}
+              onPress={() => copyToClipboard(classInfo?.class_code || "")}
               className="bg-white rounded-xl px-4 py-3 ml-4"
             >
-              <Ionicons name="copy-outline" size={20} color="#6366F1" />
+              <Ionicons name="copy-outline" size={20} color="#3B82F6" />
             </TouchableOpacity>
           </View>
         </View>
@@ -261,8 +254,10 @@ export default function Students() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#6366F1"]}
-            tintColor="#6366F1"
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
+            title="Pull to refresh"
+            titleColor="#6B7280"
           />
         }
       >
@@ -309,10 +304,8 @@ export default function Students() {
                   Share your class code with students to get started
                 </Text>
                 <TouchableOpacity
-                  className="bg-indigo-500 rounded-xl py-3 px-6 flex-row items-center mt-4"
-                  onPress={() =>
-                    Alert.alert("Share Class", "Share class code with students")
-                  }
+                  className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center mt-4"
+                  onPress={() => copyToClipboard(classInfo?.class_code || "")}
                 >
                   <Ionicons
                     name="share-social-outline"
@@ -335,12 +328,12 @@ export default function Students() {
                   }`}
                 >
                   <View className="flex-row items-center flex-1">
-                    <View className="bg-indigo-100 rounded-xl w-10 h-10 items-center justify-center mr-3">
-                      <Ionicons name="person" size={20} color="#6366F1" />
+                    <View className="bg-blue-100 rounded-xl w-10 h-10 items-center justify-center mr-3">
+                      <Ionicons name="person" size={20} color="#3B82F6" />
                     </View>
                     <View className="flex-1">
                       <Text className="font-semibold text-gray-900 text-base">
-                        {student.first_name + " " + student.last_name}
+                        {student.first_name} {student.last_name}
                       </Text>
                       <Text className="text-gray-500 text-sm mt-1">
                         {student.email}
@@ -360,7 +353,12 @@ export default function Students() {
                       </Text>
                     </View>
                     <TouchableOpacity
-                      onPress={() => removeStudent(student.id, student.name)}
+                      onPress={() =>
+                        removeStudent(
+                          student.id,
+                          `${student.first_name} ${student.last_name}`,
+                        )
+                      }
                       className="p-2"
                     >
                       <Ionicons
@@ -374,50 +372,8 @@ export default function Students() {
               ))
             )}
           </View>
-
-          {/* Quick Actions */}
-          {/* <View className="mt-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <Text className="font-bold text-gray-900 text-lg mb-3">
-              Quick Actions
-            </Text>
-            <View className="flex-row space-x-3">
-              <TouchableOpacity
-                className="bg-indigo-50 flex-1 rounded-xl p-3 flex-row items-center justify-center"
-                onPress={() =>
-                  Alert.alert(
-                    "Email All",
-                    "This will email all students in the class"
-                  )
-                }
-              >
-                <Ionicons name="mail-outline" size={18} color="#6366F1" />
-                <Text className="text-indigo-600 font-medium ml-2">
-                  Email All
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="bg-green-50 flex-1 rounded-xl p-3 flex-row items-center justify-center"
-                onPress={() =>
-                  Alert.alert("Export List", "Export student list as CSV")
-                }
-              >
-                <Ionicons name="download-outline" size={18} color="#10B981" />
-                <Text className="text-green-600 font-medium ml-2">
-                  Export List
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View> */}
         </View>
       </ScrollView>
-
-      {/* Add Student FAB */}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-indigo-500 rounded-full w-14 h-14 items-center justify-center shadow-lg"
-        onPress={() => Alert.alert("Add Student", "Feature coming soon!")}
-      >
-        <Ionicons name="person-add" size={24} color="white" />
-      </TouchableOpacity>
     </View>
   );
 }

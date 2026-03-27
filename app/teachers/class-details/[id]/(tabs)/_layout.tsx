@@ -2,6 +2,9 @@ import { Tabs, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ClassDetailsTabsLayout() {
+  const { id } = useLocalSearchParams(); // Get the class ID from URL
+
+  console.log("Layout - Class ID:", id); // Debug log
   return (
     <Tabs screenOptions={{ headerShown: false, headerTitle: "Class Details" }}>
       <Tabs.Screen
@@ -39,6 +42,16 @@ export default function ClassDetailsTabsLayout() {
             <Ionicons name="document-text" size={size} color={color} />
           ),
         }}
+      />
+      <Tabs.Screen
+        name="FlashCards"
+        options={{
+          title: "Flashcards",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="copy" size={size} color={color} />
+          ),
+        }}
+        initialParams={{ id }} // <-- ADD THIS
       />
       <Tabs.Screen
         name="assignments"

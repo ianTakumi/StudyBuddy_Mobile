@@ -28,8 +28,6 @@ export default function TabLayout() {
             case "Classes":
               return <Ionicons name="school-outline" size={22} color={color} />;
 
-            case "FlashCards":
-              return <Ionicons name="copy-outline" size={22} color={color} />;
             case "Assignments":
               return (
                 <Ionicons

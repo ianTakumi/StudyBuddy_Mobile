@@ -130,10 +130,6 @@ export default function Quizzes() {
 
       const response = await client.get(`/quizzes/${classId}`);
       if (response.data.success) {
-        console.log(
-          "📊 API Response:",
-          JSON.stringify(response.data.data, null, 2),
-        );
         setQuizzes(response.data.data);
       }
       setLoading(false);
@@ -193,9 +189,7 @@ export default function Quizzes() {
         let processedOptions: any[] = [];
         let processedCorrectAnswer = question.correctAnswer;
 
-        // Handle options based on quiz type
         if (quizType === "true_false") {
-          // Auto-generate true/false options
           processedOptions = [
             {
               option_text: "True",
@@ -210,14 +204,12 @@ export default function Quizzes() {
                 question.correctAnswer === "FALSE",
             },
           ];
-          // Ensure correct_answer is stored consistently
           processedCorrectAnswer =
             question.correctAnswer === "True" ||
             question.correctAnswer === "TRUE"
               ? "True"
               : "False";
         } else if (quizType === "multiple_choice") {
-          // Process multiple choice options
           processedOptions = question.options
             .filter((opt) => opt.trim() !== "")
             .map((opt, index) => ({
@@ -249,7 +241,6 @@ export default function Quizzes() {
       return;
     }
 
-    // Validate questions
     const validQuestions = questions.filter((q) => q.question.trim() !== "");
     if (validQuestions.length === 0) {
       Alert.alert("Error", "Please add at least one question");
@@ -271,8 +262,6 @@ export default function Quizzes() {
         question_count: processedQuestions.length,
         questions: processedQuestions,
       };
-
-      console.log("📤 Creating quiz:", JSON.stringify(quizData, null, 2));
 
       const response = await client.post(`/quizzes/${classId}`, quizData);
       if (response.data.success) {
@@ -302,7 +291,6 @@ export default function Quizzes() {
       return;
     }
 
-    // Validate questions
     const validQuestions = questions.filter((q) => q.question.trim() !== "");
     if (validQuestions.length === 0) {
       Alert.alert("Error", "Please add at least one question");
@@ -449,7 +437,6 @@ export default function Quizzes() {
     setSelectedQuiz(null);
   };
 
-  // When quiz type changes, update all questions
   useEffect(() => {
     if (showAddModal || showEditModal) {
       const updatedQuestions = questions.map((q) => ({
@@ -474,12 +461,10 @@ export default function Quizzes() {
       quiz_type: quiz.quiz_type,
     });
 
-    // Convert API questions to form questions
     const quizQuestions = quiz.quiz_questions || [];
     const formattedQuestions =
       quizQuestions.length > 0
         ? quizQuestions.map((q: QuizQuestion) => {
-            // Extract option texts from options array
             const optionTexts = q.options
               ? q.options.map((opt: any) => opt.option_text || "")
               : ["", "", "", ""];
@@ -545,7 +530,7 @@ export default function Quizzes() {
   const getQuizTypeColor = (type: string) => {
     switch (type) {
       case "multiple_choice":
-        return "#6366F1";
+        return "#3B82F6";
       case "true_false":
         return "#10B981";
       default:
@@ -574,7 +559,7 @@ export default function Quizzes() {
   if (loading) {
     return (
       <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#6366F1" />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text className="text-gray-600 mt-4">Loading quizzes...</Text>
       </View>
     );
@@ -592,7 +577,7 @@ export default function Quizzes() {
             </Text>
           </View>
           <TouchableOpacity
-            className="bg-indigo-500 rounded-xl px-4 py-2 flex-row items-center"
+            className="bg-blue-500 rounded-xl px-4 py-2 flex-row items-center"
             onPress={() => setShowAddModal(true)}
           >
             <Ionicons name="add" size={20} color="white" />
@@ -631,7 +616,7 @@ export default function Quizzes() {
             </Text>
             {!searchQuery && (
               <TouchableOpacity
-                className="bg-indigo-500 rounded-xl py-3 px-6 flex-row items-center justify-center mt-4"
+                className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center justify-center mt-4"
                 onPress={() => setShowAddModal(true)}
               >
                 <Ionicons name="add" size={20} color="white" />
@@ -658,8 +643,8 @@ export default function Quizzes() {
                     {item.description}
                   </Text>
                 </View>
-                <View className="bg-indigo-100 rounded-lg px-2 py-1">
-                  <Text className="text-indigo-700 text-xs font-semibold">
+                <View className="bg-blue-100 rounded-lg px-2 py-1">
+                  <Text className="text-blue-700 text-xs font-semibold">
                     {item.total_points} pts
                   </Text>
                 </View>
@@ -977,7 +962,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                       key={type.value}
                       className={`mx-1 mb-2 px-3 py-2 rounded-lg border ${
                         formData.quiz_type === type.value
-                          ? "bg-indigo-500 border-indigo-500"
+                          ? "bg-blue-500 border-blue-500"
                           : "bg-white border-gray-300"
                       }`}
                       onPress={() =>
@@ -1076,7 +1061,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                               key={option}
                               className={`flex-1 py-2 rounded-lg border ${
                                 question.correctAnswer === option
-                                  ? "bg-indigo-500 border-indigo-500"
+                                  ? "bg-blue-500 border-blue-500"
                                   : "bg-white border-gray-300"
                               }`}
                               onPress={() =>
@@ -1146,7 +1131,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-indigo-500 rounded-xl disabled:bg-indigo-300"
+                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl disabled:bg-blue-300"
                 onPress={onSubmit}
                 disabled={submitting}
               >
@@ -1296,7 +1281,7 @@ const SubmissionsModal: React.FC<SubmissionsModalProps> = ({
 
           {loading ? (
             <View className="flex-1 justify-center items-center py-8">
-              <ActivityIndicator size="large" color="#6366F1" />
+              <ActivityIndicator size="large" color="#3B82F6" />
               <Text className="text-gray-600 mt-4">Loading submissions...</Text>
             </View>
           ) : submissions.length === 0 ? (

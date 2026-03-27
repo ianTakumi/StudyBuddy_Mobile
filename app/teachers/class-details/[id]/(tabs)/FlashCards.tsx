@@ -7,16 +7,18 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import client from "@/utils/axiosInstance";
 
 interface Flashcard {
   id: string;
   question: string;
   answer: string;
-  flashcard_set_id: string;
+  flashcard_set_class_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,34 +27,47 @@ interface FlashcardSet {
   id: string;
   title: string;
   description: string;
-  subject: string;
-  user_id: string;
+  class_id: string;
   created_at: string;
   updated_at: string;
-  flashcards?: Flashcard[];
+  flashcards_class?: Flashcard[];
 }
 
 export default function TeacherFlashcards() {
+  const router = useRouter();
+  const { id: classId } = useLocalSearchParams();
   const user = useSelector((state: any) => state.auth.user);
+
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddSetModal, setShowAddSetModal] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [showEditSetModal, setShowEditSetModal] = useState(false);
   const [showStudyModal, setShowStudyModal] = useState(false);
+  const [showEditCardModal, setShowEditCardModal] = useState(false);
   const [currentSet, setCurrentSet] = useState<FlashcardSet | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [editingCard, setEditingCard] = useState<{
+    setId: string;
+    card: Flashcard;
+  } | null>(null);
+  const [editCardData, setEditCardData] = useState({
+    question: "",
+    answer: "",
+  });
+
   const [newSet, setNewSet] = useState({
     title: "",
     description: "",
-    subject: "",
   });
+
   const [editSet, setEditSet] = useState({
     id: "",
     title: "",
     description: "",
-    subject: "",
   });
+
   const [newFlashcard, setNewFlashcard] = useState({
     question: "",
     answer: "",
@@ -60,19 +75,46 @@ export default function TeacherFlashcards() {
 
   // Helper function to safely get flashcards array
   const getFlashcards = (set: FlashcardSet): Flashcard[] => {
-    return set.flashcards || [];
+    return set.flashcards_class || [];
   };
 
-  // Fetch all flashcard sets for the teacher
+  // Validation functions
+  const isAddSetValid = () => {
+    return newSet.title.trim() !== "";
+  };
+
+  const isEditSetValid = () => {
+    return editSet.title.trim() !== "";
+  };
+
+  const isAddFlashcardValid = () => {
+    return (
+      newFlashcard.question.trim() !== "" && newFlashcard.answer.trim() !== ""
+    );
+  };
+
+  const isEditFlashcardValid = () => {
+    return (
+      editCardData.question.trim() !== "" && editCardData.answer.trim() !== ""
+    );
+  };
+
+  // Fetch all flashcard sets for this class
   const fetchFlashcardSets = async () => {
+    if (!classId) {
+      console.log("No classId available, skipping fetch");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await client.get(`/flashcards/sets/${user.id}`);
+      setLoading(true);
+      const response = await client.get(`/flashcards-class/class/${classId}`);
       if (response.data.success) {
-        // Ensure each set has flashcards array
         const setsWithFlashcards = response.data.data.map(
           (set: FlashcardSet) => ({
             ...set,
-            flashcards: set.flashcards || [],
+            flashcards_class: set.flashcards_class || [],
           }),
         );
         setFlashcardSets(setsWithFlashcards);
@@ -80,57 +122,66 @@ export default function TeacherFlashcards() {
     } catch (error) {
       console.error("Error fetching flashcard sets:", error);
       Alert.alert("Error", "Failed to load flashcard sets");
+      setFlashcardSets([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user?.id) {
-      fetchFlashcardSets();
-    }
-  }, [user?.id]);
+    fetchFlashcardSets();
+  }, [classId]);
 
   // Create new flashcard set
   const handleAddSet = async () => {
-    if (!newSet.title || !newSet.subject) {
-      Alert.alert("Error", "Please fill in title and subject");
+    if (!newSet.title) {
+      Alert.alert("Error", "Title is required");
       return;
     }
 
     try {
-      const response = await client.post("/flashcards/sets", {
-        ...newSet,
-        user_id: user.id,
-      });
+      const response = await client.post(
+        `/flashcards-class/class/${classId}/sets`,
+        {
+          title: newSet.title,
+          description: newSet.description,
+        },
+      );
 
       if (response.data.success) {
-        // Add empty flashcards array to new set
         const newSetWithFlashcards = {
           ...response.data.data,
-          flashcards: [],
+          flashcards_class: [],
         };
         setFlashcardSets((prev) => [...prev, newSetWithFlashcards]);
         setShowAddSetModal(false);
-        setNewSet({ title: "", description: "", subject: "" });
+        setNewSet({ title: "", description: "" });
         Alert.alert("Success", "Flashcard set created!");
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to create flashcard set");
+    } catch (error: any) {
+      console.error("Error creating set:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to create flashcard set",
+      );
     }
   };
 
   // Update flashcard set
   const handleUpdateSet = async () => {
-    if (!editSet.title || !editSet.subject) {
-      Alert.alert("Error", "Please fill in title and subject");
+    if (!editSet.title) {
+      Alert.alert("Error", "Title is required");
       return;
     }
 
     try {
-      const response = await client.put(`/flashcards/sets/${editSet.id}`, {
-        title: editSet.title,
-        description: editSet.description,
-        subject: editSet.subject,
-      });
+      const response = await client.put(
+        `/flashcards-class/sets/${editSet.id}`,
+        {
+          title: editSet.title,
+          description: editSet.description,
+        },
+      );
 
       if (response.data.success) {
         setFlashcardSets((prev) =>
@@ -138,16 +189,17 @@ export default function TeacherFlashcards() {
             set.id === editSet.id
               ? {
                   ...response.data.data,
-                  flashcards: getFlashcards(set), // Preserve existing flashcards
+                  flashcards_class: getFlashcards(set),
                 }
               : set,
           ),
         );
         setShowEditSetModal(false);
-        setEditSet({ id: "", title: "", description: "", subject: "" });
+        setEditSet({ id: "", title: "", description: "" });
         Alert.alert("Success", "Flashcard set updated!");
       }
     } catch (error) {
+      console.error("Error updating set:", error);
       Alert.alert("Error", "Failed to update flashcard set");
     }
   };
@@ -156,7 +208,7 @@ export default function TeacherFlashcards() {
   const deleteSet = async (id: string) => {
     Alert.alert(
       "Delete Set",
-      "Are you sure you want to delete this flashcard set?",
+      "Are you sure you want to delete this flashcard set? All flashcards in this set will also be deleted.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -164,12 +216,15 @@ export default function TeacherFlashcards() {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await client.delete(`/flashcards/sets/${id}`);
+              const response = await client.delete(
+                `/flashcards-class/sets/${id}`,
+              );
               if (response.data.success) {
                 setFlashcardSets((prev) => prev.filter((set) => set.id !== id));
                 Alert.alert("Success", "Flashcard set deleted!");
               }
             } catch (error) {
+              console.error("Error deleting set:", error);
               Alert.alert("Error", "Failed to delete flashcard set");
             }
           },
@@ -181,24 +236,26 @@ export default function TeacherFlashcards() {
   // Add flashcard to set
   const handleAddFlashcard = async () => {
     if (!currentSet || !newFlashcard.question || !newFlashcard.answer) {
-      Alert.alert("Error", "Please fill in both question and answer");
+      Alert.alert("Error", "Question and answer are required");
       return;
     }
 
     try {
-      const response = await client.post("/flashcards/cards", {
-        ...newFlashcard,
-        flashcard_set_id: currentSet.id,
-      });
+      const response = await client.post(
+        `/flashcards-class/sets/${currentSet.id}/flashcards`,
+        {
+          question: newFlashcard.question,
+          answer: newFlashcard.answer,
+        },
+      );
 
       if (response.data.success) {
-        // Update the local state with the new flashcard
         setFlashcardSets((prev) =>
           prev.map((set) =>
             set.id === currentSet.id
               ? {
                   ...set,
-                  flashcards: [...getFlashcards(set), response.data.data],
+                  flashcards_class: [...getFlashcards(set), response.data.data],
                 }
               : set,
           ),
@@ -208,6 +265,7 @@ export default function TeacherFlashcards() {
         Alert.alert("Success", "Flashcard added!");
       }
     } catch (error) {
+      console.error("Error adding flashcard:", error);
       Alert.alert("Error", "Failed to add flashcard");
     }
   };
@@ -225,7 +283,7 @@ export default function TeacherFlashcards() {
           onPress: async () => {
             try {
               const response = await client.delete(
-                `/flashcards/cards/${cardId}`,
+                `/flashcards-class/flashcards/${cardId}`,
               );
               if (response.data.success) {
                 setFlashcardSets((prev) =>
@@ -233,7 +291,7 @@ export default function TeacherFlashcards() {
                     set.id === setId
                       ? {
                           ...set,
-                          flashcards: getFlashcards(set).filter(
+                          flashcards_class: getFlashcards(set).filter(
                             (card) => card.id !== cardId,
                           ),
                         }
@@ -243,6 +301,7 @@ export default function TeacherFlashcards() {
                 Alert.alert("Success", "Flashcard deleted!");
               }
             } catch (error) {
+              console.error("Error deleting flashcard:", error);
               Alert.alert("Error", "Failed to delete flashcard");
             }
           },
@@ -258,14 +317,17 @@ export default function TeacherFlashcards() {
     updates: { question?: string; answer?: string },
   ) => {
     try {
-      const response = await client.put(`/flashcards/cards/${cardId}`, updates);
+      const response = await client.put(
+        `/flashcards-class/flashcards/${cardId}`,
+        updates,
+      );
       if (response.data.success) {
         setFlashcardSets((prev) =>
           prev.map((set) =>
             set.id === setId
               ? {
                   ...set,
-                  flashcards: getFlashcards(set).map((card) =>
+                  flashcards_class: getFlashcards(set).map((card) =>
                     card.id === cardId ? response.data.data : card,
                   ),
                 }
@@ -275,8 +337,34 @@ export default function TeacherFlashcards() {
         Alert.alert("Success", "Flashcard updated!");
       }
     } catch (error) {
+      console.error("Error updating flashcard:", error);
       Alert.alert("Error", "Failed to update flashcard");
     }
+  };
+
+  // Edit Flashcard Modal functions
+  const openEditFlashcardModal = (setId: string, card: Flashcard) => {
+    setEditingCard({ setId, card });
+    setEditCardData({ question: card.question, answer: card.answer });
+    setShowEditCardModal(true);
+  };
+
+  const handleEditFlashcard = async () => {
+    if (!editingCard) return;
+
+    if (!editCardData.question || !editCardData.answer) {
+      Alert.alert("Error", "Question and answer are required");
+      return;
+    }
+
+    await handleUpdateFlashcard(editingCard.setId, editingCard.card.id, {
+      question: editCardData.question,
+      answer: editCardData.answer,
+    });
+
+    setShowEditCardModal(false);
+    setEditingCard(null);
+    setEditCardData({ question: "", answer: "" });
   };
 
   // Study functions
@@ -315,82 +403,58 @@ export default function TeacherFlashcards() {
       id: set.id,
       title: set.title,
       description: set.description || "",
-      subject: set.subject,
     });
     setShowEditSetModal(true);
-  };
-
-  const openEditFlashcardModal = (setId: string, card: Flashcard) => {
-    Alert.prompt(
-      "Edit Flashcard",
-      "Update the question and answer:",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Update",
-          onPress: (question) => {
-            if (question) {
-              Alert.prompt(
-                "Edit Answer",
-                "Update the answer:",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Update",
-                    onPress: (answer) => {
-                      if (answer) {
-                        handleUpdateFlashcard(setId, card.id, {
-                          question,
-                          answer,
-                        });
-                      }
-                    },
-                  },
-                ],
-                "plain-text",
-                card.answer,
-              );
-            }
-          },
-        },
-      ],
-      "plain-text",
-      card.question,
-    );
   };
 
   const currentCard = currentSet
     ? getFlashcards(currentSet)[currentCardIndex]
     : undefined;
 
+  if (loading) {
+    return (
+      <View className="flex-1 bg-white justify-center items-center">
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text className="text-gray-600 mt-4">Loading flashcards...</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-12 pb-4 px-6 bg-white">
-        <Text className="text-2xl font-bold text-gray-900">
-          Teacher Flashcards
-        </Text>
+      <View className="pt-12 pb-4 px-6 bg-white border-b border-gray-200">
+        <View className="flex-row items-center mb-2">
+          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-900">
+            Class Flashcards
+          </Text>
+        </View>
         <Text className="text-gray-600 mt-1">
-          Create and manage flashcard sets for your classes
+          Create and manage flashcards for your class
         </Text>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Quick Actions */}
-        <View className="mx-4 mb-6 flex-row gap-3">
+        <View className="mx-4 mb-6 mt-4">
           <TouchableOpacity
-            className="flex-1 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
+            className="bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
             onPress={() => setShowAddSetModal(true)}
           >
-            <Ionicons name="add" size={20} color="white" />
-            <Text className="text-white font-semibold ml-2">New Set</Text>
+            <Ionicons name="add-circle-outline" size={20} color="white" />
+            <Text className="text-white font-semibold ml-2">
+              Create New Flashcard Set
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Flashcard Sets List */}
         <View className="mx-4 mb-8">
           <Text className="text-lg font-semibold text-gray-900 mb-4">
-            My Flashcard Sets
+            Flashcard Sets ({flashcardSets.length})
           </Text>
 
           {flashcardSets.length > 0 ? (
@@ -408,20 +472,17 @@ export default function TeacherFlashcards() {
                       <Text className="font-bold text-gray-900 text-lg">
                         {set.title}
                       </Text>
-                      <Text className="text-gray-600 text-sm mt-1">
-                        {set.description}
-                      </Text>
+                      {set.description && (
+                        <Text className="text-gray-600 text-sm mt-1">
+                          {set.description}
+                        </Text>
+                      )}
                       <View className="flex-row items-center mt-2 gap-4">
-                        <View className="bg-blue-100 rounded-lg px-2 py-1">
-                          <Text className="text-blue-700 text-xs font-medium">
-                            {set.subject}
-                          </Text>
-                        </View>
                         <Text className="text-gray-500 text-sm">
                           {cardCount} card{cardCount !== 1 ? "s" : ""}
                         </Text>
                         <Text className="text-green-600 text-xs font-medium">
-                          Teacher Set
+                          Class Set
                         </Text>
                       </View>
                     </View>
@@ -527,7 +588,7 @@ export default function TeacherFlashcards() {
             })
           ) : (
             <View className="bg-gray-50 rounded-xl p-8 items-center">
-              <Ionicons name="school-outline" size={64} color="#9CA3AF" />
+              <Ionicons name="copy-outline" size={64} color="#9CA3AF" />
               <Text className="text-gray-500 text-lg font-semibold mt-4 text-center">
                 No Flashcard Sets Yet
               </Text>
@@ -538,7 +599,7 @@ export default function TeacherFlashcards() {
                 className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center mt-4"
                 onPress={() => setShowAddSetModal(true)}
               >
-                <Ionicons name="add" size={18} color="white" />
+                <Ionicons name="add-circle-outline" size={18} color="white" />
                 <Text className="text-white font-semibold ml-2">
                   Create First Set
                 </Text>
@@ -561,36 +622,40 @@ export default function TeacherFlashcards() {
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              placeholder="Set Title *"
-              value={newSet.title}
-              onChangeText={(text) =>
-                setNewSet((prev) => ({ ...prev, title: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-            />
+            {/* Set Title Input */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                Set Title <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter set title"
+                value={newSet.title}
+                onChangeText={(text) =>
+                  setNewSet((prev) => ({ ...prev, title: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
-            <TextInput
-              placeholder="Subject * (e.g., Mathematics, Science)"
-              value={newSet.subject}
-              onChangeText={(text) =>
-                setNewSet((prev) => ({ ...prev, subject: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-            />
-
-            <TextInput
-              placeholder="Description (optional)"
-              value={newSet.description}
-              onChangeText={(text) =>
-                setNewSet((prev) => ({ ...prev, description: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-6 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-              multiline
-            />
+            {/* Set Description Input */}
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-1">
+                Description <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter description"
+                value={newSet.description}
+                onChangeText={(text) =>
+                  setNewSet((prev) => ({ ...prev, description: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
 
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity
@@ -602,8 +667,11 @@ export default function TeacherFlashcards() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl"
+                className={`flex-1 py-3 px-4 rounded-xl ${
+                  isAddSetValid() ? "bg-blue-500" : "bg-gray-300"
+                }`}
                 onPress={handleAddSet}
+                disabled={!isAddSetValid()}
               >
                 <Text className="text-white font-medium text-center">
                   Create Set
@@ -631,36 +699,40 @@ export default function TeacherFlashcards() {
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              placeholder="Set Title *"
-              value={editSet.title}
-              onChangeText={(text) =>
-                setEditSet((prev) => ({ ...prev, title: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-            />
+            {/* Set Title Input */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                Set Title <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter set title"
+                value={editSet.title}
+                onChangeText={(text) =>
+                  setEditSet((prev) => ({ ...prev, title: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
-            <TextInput
-              placeholder="Subject *"
-              value={editSet.subject}
-              onChangeText={(text) =>
-                setEditSet((prev) => ({ ...prev, subject: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-            />
-
-            <TextInput
-              placeholder="Description"
-              value={editSet.description}
-              onChangeText={(text) =>
-                setEditSet((prev) => ({ ...prev, description: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-6 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-              multiline
-            />
+            {/* Set Description Input */}
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-1">
+                Description (Optional)
+              </Text>
+              <TextInput
+                placeholder="Enter description"
+                value={editSet.description}
+                onChangeText={(text) =>
+                  setEditSet((prev) => ({ ...prev, description: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
 
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity
@@ -672,8 +744,11 @@ export default function TeacherFlashcards() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl"
+                className={`flex-1 py-3 px-4 rounded-xl ${
+                  isEditSetValid() ? "bg-blue-500" : "bg-gray-300"
+                }`}
                 onPress={handleUpdateSet}
+                disabled={!isEditSetValid()}
               >
                 <Text className="text-white font-medium text-center">
                   Update Set
@@ -701,27 +776,43 @@ export default function TeacherFlashcards() {
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              placeholder="Question *"
-              value={newFlashcard.question}
-              onChangeText={(text) =>
-                setNewFlashcard((prev) => ({ ...prev, question: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-              multiline
-            />
+            {/* Question Input */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                Question <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter question"
+                value={newFlashcard.question}
+                onChangeText={(text) =>
+                  setNewFlashcard((prev) => ({ ...prev, question: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
 
-            <TextInput
-              placeholder="Answer *"
-              value={newFlashcard.answer}
-              onChangeText={(text) =>
-                setNewFlashcard((prev) => ({ ...prev, answer: text }))
-              }
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-6 text-gray-900"
-              placeholderTextColor="#9CA3AF"
-              multiline
-            />
+            {/* Answer Input */}
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-1">
+                Answer <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter answer"
+                value={newFlashcard.answer}
+                onChangeText={(text) =>
+                  setNewFlashcard((prev) => ({ ...prev, answer: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
 
             <View className="flex-row justify-between gap-3">
               <TouchableOpacity
@@ -733,11 +824,94 @@ export default function TeacherFlashcards() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl"
+                className={`flex-1 py-3 px-4 rounded-xl ${
+                  isAddFlashcardValid() ? "bg-blue-500" : "bg-gray-300"
+                }`}
                 onPress={handleAddFlashcard}
+                disabled={!isAddFlashcardValid()}
               >
                 <Text className="text-white font-medium text-center">
                   Add Card
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Flashcard Modal */}
+      <Modal
+        visible={showEditCardModal}
+        animationType="slide"
+        transparent={true}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-xl font-bold text-gray-900">
+                Edit Flashcard
+              </Text>
+              <TouchableOpacity onPress={() => setShowEditCardModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Question Input */}
+            <View className="mb-3">
+              <Text className="text-gray-700 font-medium mb-1">
+                Question <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter question"
+                value={editCardData.question}
+                onChangeText={(text) =>
+                  setEditCardData((prev) => ({ ...prev, question: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
+
+            {/* Answer Input */}
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-1">
+                Answer <Text className="text-red-500">*</Text>
+              </Text>
+              <TextInput
+                placeholder="Enter answer"
+                value={editCardData.answer}
+                onChangeText={(text) =>
+                  setEditCardData((prev) => ({ ...prev, answer: text }))
+                }
+                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View className="flex-row justify-between gap-3">
+              <TouchableOpacity
+                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                onPress={() => setShowEditCardModal(false)}
+              >
+                <Text className="text-gray-700 font-medium text-center">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 rounded-xl ${
+                  isEditFlashcardValid() ? "bg-blue-500" : "bg-gray-300"
+                }`}
+                onPress={handleEditFlashcard}
+                disabled={!isEditFlashcardValid()}
+              >
+                <Text className="text-white font-medium text-center">
+                  Update Card
                 </Text>
               </TouchableOpacity>
             </View>
