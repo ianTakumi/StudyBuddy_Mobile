@@ -36,6 +36,9 @@ export default function TabLayout() {
                 />
               );
 
+            case "Contacts":
+              return <Ionicons name="call-outline" size={22} color={color} />;
+
             case "Profile":
               return <Ionicons name="person-outline" size={22} color={color} />;
 
@@ -48,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen name="Index" options={{ title: "Dashboard" }} />
       <Tabs.Screen name="Users" options={{ title: "Users" }} />
       <Tabs.Screen name="Classes" options={{ title: "Classes" }} />
-      <Tabs.Screen name="Content" options={{ title: "Content" }} />
+      <Tabs.Screen name="Contacts" options={{ title: "Contacts" }} />
       <Tabs.Screen name="Profile" options={{ title: "Profile" }} />
     </Tabs>
   );

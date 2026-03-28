@@ -262,9 +262,9 @@ export default function Students() {
         }
       >
         <View className="p-4">
-          {/* Stats */}
-          <View className="flex-row justify-between mb-6">
-            <View className="bg-white rounded-2xl p-4 flex-1 mr-2 shadow-sm border border-gray-100">
+          {/* Stats - Removed Active stats */}
+          <View className="mb-6">
+            <View className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-600 text-sm font-medium">
                 Total Students
               </Text>
@@ -273,15 +273,6 @@ export default function Students() {
               </Text>
               <Text className="text-gray-400 text-xs mt-1">
                 Enrolled in class
-              </Text>
-            </View>
-            <View className="bg-white rounded-2xl p-4 flex-1 ml-2 shadow-sm border border-gray-100">
-              <Text className="text-gray-600 text-sm font-medium">Active</Text>
-              <Text className="text-2xl font-bold text-green-600 mt-1">
-                {students.length}
-              </Text>
-              <Text className="text-gray-400 text-xs mt-1">
-                All students active
               </Text>
             </View>
           </View>
@@ -346,28 +337,21 @@ export default function Students() {
                     </View>
                   </View>
 
-                  <View className="flex-row items-center gap-2">
-                    <View className="bg-green-100 rounded-lg px-2 py-1">
-                      <Text className="text-green-700 text-xs font-medium">
-                        Active
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() =>
-                        removeStudent(
-                          student.id,
-                          `${student.first_name} ${student.last_name}`,
-                        )
-                      }
-                      className="p-2"
-                    >
-                      <Ionicons
-                        name="ellipsis-vertical"
-                        size={16}
-                        color="#6B7280"
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity
+                    onPress={() =>
+                      removeStudent(
+                        student.id,
+                        `${student.first_name} ${student.last_name}`,
+                      )
+                    }
+                    className="p-2"
+                  >
+                    <Ionicons
+                      name="ellipsis-vertical"
+                      size={16}
+                      color="#6B7280"
+                    />
+                  </TouchableOpacity>
                 </View>
               ))
             )}

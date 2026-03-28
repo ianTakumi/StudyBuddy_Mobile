@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TextInput,
   Modal,
   Alert,
+  Animated,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
@@ -29,6 +31,104 @@ interface FlashcardSet {
   flashcards?: Flashcard[];
 }
 
+// Skeleton Loader Component
+const SkeletonLoader = () => {
+  const animatedValue = new Animated.Value(0.3);
+
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulseAnimation.start();
+
+    return () => pulseAnimation.stop();
+  }, []);
+
+  const opacity = animatedValue;
+
+  const SkeletonItem = ({ width = "100%", height = 20, className = "" }) => (
+    <Animated.View
+      style={{ opacity }}
+      className={`bg-gray-200 rounded-lg ${className}`}
+    >
+      <View style={{ width, height }} />
+    </Animated.View>
+  );
+
+  return (
+    <View className="flex-1 bg-white">
+      {/* Header Skeleton */}
+      <View className="pt-12 pb-4 px-6 bg-white">
+        <SkeletonItem width="150px" height={32} className="mb-2" />
+        <SkeletonItem width="100px" height={20} />
+      </View>
+
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Quick Actions Skeleton */}
+        <View className="mx-4 mb-6">
+          <View className="bg-gray-200 rounded-xl py-4 items-center">
+            <SkeletonItem width="120px" height={20} />
+          </View>
+        </View>
+
+        {/* Flashcard Sets Skeleton */}
+        <View className="mx-4 mb-8">
+          <SkeletonItem width="150px" height={24} className="mb-4" />
+
+          {/* Skeleton Cards */}
+          {[1, 2, 3].map((item) => (
+            <View
+              key={item}
+              className="bg-white rounded-xl p-4 mb-3 border border-gray-100"
+            >
+              <View className="flex-row justify-between items-start mb-3">
+                <View className="flex-1">
+                  <SkeletonItem width="70%" height={24} className="mb-2" />
+                  <SkeletonItem width="90%" height={16} className="mb-2" />
+                  <View className="flex-row items-center mt-2 gap-5">
+                    <SkeletonItem width="80px" height={24} />
+                    <SkeletonItem width="60px" height={16} />
+                  </View>
+                </View>
+              </View>
+
+              <View className="flex-row gap-2 flex-wrap">
+                <SkeletonItem width="70px" height={32} />
+                <SkeletonItem width="80px" height={32} />
+                <SkeletonItem width="70px" height={32} />
+                <SkeletonItem width="60px" height={32} />
+              </View>
+
+              <View className="mt-3 pt-3 border-t border-gray-100">
+                <SkeletonItem width="120px" height={16} className="mb-2" />
+                <View className="bg-gray-50 rounded-lg p-3 mb-2">
+                  <SkeletonItem width="80%" height={16} className="mb-1" />
+                  <SkeletonItem width="60%" height={14} />
+                </View>
+                <View className="bg-gray-50 rounded-lg p-3">
+                  <SkeletonItem width="85%" height={16} className="mb-1" />
+                  <SkeletonItem width="65%" height={14} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
 export default function Flashcards() {
   const user = useSelector((state: any) => state.auth.user);
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
@@ -39,6 +139,8 @@ export default function Flashcards() {
   const [currentSet, setCurrentSet] = useState<FlashcardSet | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [newSet, setNewSet] = useState({
     title: "",
     description: "",
@@ -62,7 +164,10 @@ export default function Flashcards() {
 
   // Fetch all flashcard sets for the user
   const fetchFlashcardSets = async () => {
+    if (!user?.id) return;
+
     try {
+      setLoading(true);
       const response = await client.get(`/flashcards/sets/${user.id}`);
       if (response.data.success) {
         // Ensure each set has flashcards array
@@ -77,8 +182,17 @@ export default function Flashcards() {
     } catch (error) {
       console.error("Error fetching flashcard sets:", error);
       Alert.alert("Error", "Failed to load flashcard sets");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  // Refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchFlashcardSets();
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
@@ -360,21 +474,39 @@ export default function Flashcards() {
     ? getFlashcards(currentSet)[currentCardIndex]
     : undefined;
 
+  // Show skeleton loader while loading
+  if (loading && !refreshing) {
+    return <SkeletonLoader />;
+  }
+
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-12 pb-4 px-6 bg-white">
+      <View className="pt-12 pb-4 px-6 bg-white border-b border-gray-100">
         <Text className="text-2xl font-bold text-gray-900">Flashcards</Text>
         <Text className="text-gray-600 mt-1">
           {flashcardSets.length} set{flashcardSets.length !== 1 ? "s" : ""}
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
+            title="Pull to refresh"
+            titleColor="#6B7280"
+          />
+        }
+      >
         {/* Quick Actions */}
-        <View className="mx-4 mb-6 flex-row gap-4">
+        <View className="mx-4 mb-6 mt-4">
           <TouchableOpacity
-            className="flex-1 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
+            className="bg-blue-500 rounded-xl py-4 flex-row items-center justify-center shadow-sm"
             onPress={() => setShowAddSetModal(true)}
           >
             <Ionicons name="add" size={20} color="white" />
@@ -403,9 +535,11 @@ export default function Flashcards() {
                       <Text className="font-bold text-gray-900 text-lg">
                         {set.title}
                       </Text>
-                      <Text className="text-gray-600 text-sm mt-1">
-                        {set.description}
-                      </Text>
+                      {set.description ? (
+                        <Text className="text-gray-600 text-sm mt-1">
+                          {set.description}
+                        </Text>
+                      ) : null}
                       <View className="flex-row items-center mt-2 gap-5">
                         <View className="bg-blue-100 rounded-lg px-2 py-1">
                           <Text className="text-blue-700 text-xs font-medium">
@@ -421,7 +555,7 @@ export default function Flashcards() {
 
                   <View className="flex-row gap-2 flex-wrap">
                     <TouchableOpacity
-                      className="bg-green-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-green-100 px-3 py-2 rounded-lg flex-row items-center"
                       onPress={() => startStudying(set)}
                     >
                       <Ionicons name="play" size={14} color="#10B981" />
@@ -431,7 +565,7 @@ export default function Flashcards() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      className="bg-blue-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-blue-100 px-3 py-2 rounded-lg flex-row items-center"
                       onPress={() => openAddCardModal(set)}
                     >
                       <Ionicons name="add" size={14} color="#3B82F6" />
@@ -441,7 +575,7 @@ export default function Flashcards() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      className="bg-yellow-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-yellow-100 px-3 py-2 rounded-lg flex-row items-center"
                       onPress={() => openEditSetModal(set)}
                     >
                       <Ionicons name="create" size={14} color="#D97706" />
@@ -451,7 +585,7 @@ export default function Flashcards() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      className="bg-red-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-red-100 px-3 py-2 rounded-lg flex-row items-center"
                       onPress={() => deleteSet(set.id)}
                     >
                       <Ionicons
@@ -471,7 +605,7 @@ export default function Flashcards() {
                       <Text className="text-gray-700 text-sm font-medium mb-2">
                         Cards in this set:
                       </Text>
-                      {flashcards.map((card) => (
+                      {flashcards.slice(0, 3).map((card) => (
                         <View
                           key={card.id}
                           className="bg-gray-50 rounded-lg p-3 mb-2"
@@ -512,6 +646,12 @@ export default function Flashcards() {
                           </View>
                         </View>
                       ))}
+                      {cardCount > 3 && (
+                        <Text className="text-gray-500 text-xs text-center mt-1">
+                          +{cardCount - 3} more card
+                          {cardCount - 3 !== 1 ? "s" : ""}
+                        </Text>
+                      )}
                     </View>
                   )}
                 </View>

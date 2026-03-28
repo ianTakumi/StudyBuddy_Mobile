@@ -239,50 +239,25 @@ export default function AdminProfile() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          {/* Content Moderation */}
+          {/* Contact Inquiries */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/admin/(drawers)/(tabs)/Content")}
+            onPress={() => router.push("/admin/(drawers)/(tabs)/Contacts")}
           >
             <View className="flex-row items-center">
-              <View className="bg-orange-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
                 <Ionicons
-                  name="document-text-outline"
+                  name="chatbubbles-outline"
                   size={20}
-                  color="#FF9500"
+                  color="#3B82F6"
                 />
               </View>
               <View>
                 <Text className="text-gray-900 font-medium">
-                  Content Moderation
+                  Contact Inquiries
                 </Text>
                 <Text className="text-gray-500 text-sm">
-                  Review and manage content
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Analytics & Reports */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between"
-            onPress={() => router.push("/admin/(drawers)/(tabs)/Analytics")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-purple-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons
-                  name="stats-chart-outline"
-                  size={20}
-                  color="#AF52DE"
-                />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Analytics & Reports
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  View platform insights
+                  View and respond to user messages
                 </Text>
               </View>
             </View>

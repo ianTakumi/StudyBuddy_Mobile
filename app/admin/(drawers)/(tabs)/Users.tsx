@@ -11,6 +11,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import client from "@/utils/axiosInstance";
 
 interface User {
@@ -26,6 +27,7 @@ interface User {
 }
 
 export default function UsersScreen() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,7 +42,12 @@ export default function UsersScreen() {
       const response = await client.get("/users");
 
       if (response.data.success) {
-        setUsers(response.data.data || []);
+        // Filter out admin users
+        const allUsers = response.data.data || [];
+        const nonAdminUsers = allUsers.filter(
+          (user: User) => user.role !== "admin",
+        );
+        setUsers(nonAdminUsers);
       } else {
         throw new Error("Failed to fetch users");
       }
@@ -69,8 +76,8 @@ export default function UsersScreen() {
     const searchLower = searchQuery.toLowerCase();
 
     const matchesSearch =
-      (user.firstName?.toLowerCase() || "").includes(searchLower) ||
-      (user.lastName?.toLowerCase() || "").includes(searchLower) ||
+      (user.first_name?.toLowerCase() || "").includes(searchLower) ||
+      (user.last_name?.toLowerCase() || "").includes(searchLower) ||
       (user.email?.toLowerCase() || "").includes(searchLower);
 
     const matchesRole = selectedRole === "all" || user.role === selectedRole;
@@ -96,6 +103,20 @@ export default function UsersScreen() {
     );
   };
 
+  const handleEditUser = (user: User) => {
+    router.push({
+      pathname: "/admin/updateUser",
+      params: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        phone: user.phone || "",
+        role: user.role,
+      },
+    });
+  };
+
   const handleUserAction = async (action: string, userId?: string) => {
     const usersToAction = userId ? [userId] : selectedUsers;
 
@@ -104,6 +125,7 @@ export default function UsersScreen() {
       return;
     }
 
+    // For delete, show confirmation
     Alert.alert(
       `${action} Users`,
       `Are you sure you want to ${action.toLowerCase()} ${usersToAction.length} user(s)?`,
@@ -116,17 +138,8 @@ export default function UsersScreen() {
             try {
               // Handle different actions
               switch (action.toLowerCase()) {
-                case "activate":
-                  // await client.patch(`/users/${userId}/activate`);
-                  break;
-                case "suspend":
-                  // await client.patch(`/users/${userId}/suspend`);
-                  break;
                 case "delete":
-                  // await client.delete(`/users/${userId}`);
-                  break;
-                case "edit":
-                  // Navigate to edit screen or show modal
+                  await client.delete(`/users/${userId}`);
                   break;
                 default:
                   break;
@@ -154,10 +167,7 @@ export default function UsersScreen() {
 
     try {
       const date = new Date(dateString);
-      // Check if date is valid
       if (isNaN(date.getTime())) return "Invalid date";
-
-      // Format as MM/DD/YYYY
       return date.toLocaleDateString("en-US", {
         month: "2-digit",
         day: "2-digit",
@@ -170,8 +180,6 @@ export default function UsersScreen() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "admin":
-        return "bg-purple-500";
       case "teacher":
         return "bg-blue-500";
       case "student":
@@ -181,7 +189,6 @@ export default function UsersScreen() {
     }
   };
 
-  // Safe user data accessor functions
   const getUserName = (user: User) => {
     return (
       `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
@@ -197,86 +204,58 @@ export default function UsersScreen() {
     return user.phone || "No phone";
   };
 
-  const UserCard = ({ user }: { user: User }) => (
-    <TouchableOpacity
-      className={`bg-white p-4 rounded-lg mb-3 border-2 ${
-        selectedUsers.includes(user.id)
-          ? "border-blue-500 bg-blue-50"
-          : "border-gray-200"
-      }`}
-      onPress={() => toggleUserSelection(user.id)}
-    >
-      <View className="flex-row justify-between items-start mb-3">
-        <View className="flex-1">
-          <View className="flex-row items-center mb-1">
-            <Text className="text-lg font-semibold text-gray-900">
-              {getUserName(user)}
-            </Text>
-            <View
-              className={`ml-2 px-2 py-1 rounded-full ${getRoleColor(user.role || "student")}`}
-            >
-              <Text className="text-white text-xs font-medium capitalize">
-                {user.role || "student"}
+  const UserCard = ({ user }: { user: User }) => {
+    return (
+      <TouchableOpacity
+        className={`bg-white p-4 rounded-lg mb-3 border-2 ${
+          selectedUsers.includes(user.id)
+            ? "border-blue-500 bg-blue-50"
+            : "border-gray-200"
+        }`}
+        onPress={() => toggleUserSelection(user.id)}
+        activeOpacity={0.7}
+      >
+        <View className="flex-row justify-between items-start mb-3">
+          <View className="flex-1">
+            <View className="flex-row items-center mb-1">
+              <Text className="text-lg font-semibold text-gray-900">
+                {getUserName(user)}
               </Text>
+              <View
+                className={`ml-2 px-2 py-1 rounded-full ${getRoleColor(user.role || "student")}`}
+              >
+                <Text className="text-white text-xs font-medium capitalize">
+                  {user.role || "student"}
+                </Text>
+              </View>
             </View>
-          </View>
-          <Text className="text-gray-600 text-sm">{getUserEmail(user)}</Text>
-          <Text className="text-gray-500 text-sm">{getUserPhone(user)}</Text>
-        </View>
-      </View>
-
-      <View className="flex-row justify-between items-center border-t border-gray-100 pt-3">
-        <View className="flex-row gap-4">
-          <View className="items-center">
-            <Ionicons name="copy-outline" size={16} color="#6B7280" />
-            <Text className="text-gray-600 text-xs mt-1">
-              {user.flashcardsCreated || 0}
-            </Text>
-          </View>
-          <View className="items-center">
-            <Ionicons name="school-outline" size={16} color="#6B7280" />
-            <Text className="text-gray-600 text-xs mt-1">
-              {user.studySessions || 0}
-            </Text>
+            <Text className="text-gray-600 text-sm">{getUserEmail(user)}</Text>
+            <Text className="text-gray-500 text-sm">{getUserPhone(user)}</Text>
           </View>
         </View>
 
-        <View className="flex-row gap-2">
-          <TouchableOpacity
-            className="p-2 bg-gray-100 rounded-lg"
-            onPress={() => handleUserAction("Edit", user.id)}
-          >
-            <Ionicons name="create-outline" size={16} color="#4B5563" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="p-2 bg-gray-100 rounded-lg"
-            onPress={() =>
-              handleUserAction(
-                user.status === "suspended" ? "Activate" : "Suspend",
-                user.id,
-              )
-            }
-          >
-            <Ionicons
-              name={
-                user.status === "suspended"
-                  ? "checkmark-circle-outline"
-                  : "pause-circle-outline"
-              }
-              size={16}
-              color={user.status === "suspended" ? "#10B981" : "#EF4444"}
-            />
-          </TouchableOpacity>
+        <View className="flex-row justify-between items-center border-t border-gray-100 pt-3">
+          <Text className="text-gray-500 text-xs">
+            Joined: {formatDate(user.created_at)}
+          </Text>
+          <View className="flex-row gap-2">
+            <TouchableOpacity
+              className="p-2 bg-gray-100 rounded-lg"
+              onPress={() => handleEditUser(user)}
+            >
+              <Ionicons name="create-outline" size={16} color="#4B5563" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="p-2 bg-red-100 rounded-lg"
+              onPress={() => handleUserAction("Delete", user.id)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-
-      <View className="flex-row justify-between mt-2">
-        <Text className="text-gray-500 text-xs">
-          Joined: {formatDate(user.created_at)}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading && !refreshing) {
     return (
@@ -286,6 +265,8 @@ export default function UsersScreen() {
       </View>
     );
   }
+
+  const displayUsers = filteredUsers;
 
   return (
     <View className="flex-1 bg-gray-50 pt-14">
@@ -329,13 +310,17 @@ export default function UsersScreen() {
             className="flex-1"
           >
             <View className="flex-row gap-2">
-              {["all", "student", "teacher", "admin"].map((role) => (
+              {["all", "student", "teacher"].map((role) => (
                 <TouchableOpacity
                   key={role}
                   className={`px-4 py-2 rounded-full ${
                     selectedRole === role ? "bg-blue-500" : "bg-gray-200"
                   }`}
-                  onPress={() => setSelectedRole(role)}
+                  onPress={() => {
+                    setSelectedRole(role);
+                    // Clear selections when changing filters
+                    setSelectedUsers([]);
+                  }}
                 >
                   <Text
                     className={`font-medium ${
@@ -345,7 +330,7 @@ export default function UsersScreen() {
                     {role === "all"
                       ? "All Users"
                       : role.charAt(0).toUpperCase() + role.slice(1)}
-                    s
+                    {role !== "all" ? "s" : ""}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -354,30 +339,16 @@ export default function UsersScreen() {
         </View>
       </View>
 
-      {/* Bulk Actions */}
-      {selectedUsers.length > 0 && (
+      {/* Bulk Actions - Only show when teachers are selected */}
+      {selectedRole === "teacher" && selectedUsers.length > 0 && (
         <View className="bg-blue-50 px-4 py-3 border-b border-blue-200">
           <View className="flex-row justify-between items-center">
             <Text className="text-blue-800 font-medium">
-              {selectedUsers.length} user(s) selected
+              {selectedUsers.length} teacher(s) selected
             </Text>
             <View className="flex-row gap-2">
               <TouchableOpacity
-                className="px-3 py-1 bg-green-500 rounded-lg flex-row items-center"
-                onPress={() => handleUserAction("Activate")}
-              >
-                <Ionicons name="checkmark-circle" size={16} color="white" />
-                <Text className="text-white text-sm ml-1">Activate</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
                 className="px-3 py-1 bg-red-500 rounded-lg flex-row items-center"
-                onPress={() => handleUserAction("Suspend")}
-              >
-                <Ionicons name="pause-circle" size={16} color="white" />
-                <Text className="text-white text-sm ml-1">Suspend</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="px-3 py-1 bg-gray-500 rounded-lg flex-row items-center"
                 onPress={() => handleUserAction("Delete")}
               >
                 <Ionicons name="trash" size={16} color="white" />
@@ -397,12 +368,14 @@ export default function UsersScreen() {
       >
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-gray-600">
-            Showing {filteredUsers.length} user(s)
+            Showing {displayUsers.length} user(s)
           </Text>
-          {filteredUsers.length > 0 && (
+          {/* Only show Select All/Deselect All when viewing teachers */}
+          {selectedRole === "teacher" && displayUsers.length > 0 && (
             <TouchableOpacity onPress={selectAllUsers}>
               <Text className="text-blue-500 font-medium">
-                {selectedUsers.length === filteredUsers.length
+                {selectedUsers.length === displayUsers.length &&
+                displayUsers.length > 0
                   ? "Deselect All"
                   : "Select All"}
               </Text>
@@ -410,11 +383,11 @@ export default function UsersScreen() {
           )}
         </View>
 
-        {filteredUsers.map((user) => (
+        {displayUsers.map((user) => (
           <UserCard key={user.id} user={user} />
         ))}
 
-        {filteredUsers.length === 0 && (
+        {displayUsers.length === 0 && (
           <View className="items-center justify-center py-12">
             <Ionicons name="people-outline" size={64} color="#9CA3AF" />
             <Text className="text-gray-500 text-lg mt-4">

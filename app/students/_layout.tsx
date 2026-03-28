@@ -12,6 +12,11 @@ export default function _layout() {
       <Stack.Screen name="QuizDetails" options={{ headerShown: false }} />
       <Stack.Screen name="ChangePassword" options={{ headerShown: false }} />
       <Stack.Screen name="StudyGoals" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="FlashCardClassDetails"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="QuizResult" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -10,6 +10,7 @@ export default function _layout() {
       <Stack.Screen name="UpdateProfile" options={{ headerShown: false }} />
       <Stack.Screen name="ChangePassword" options={{ headerShown: false }} />
       <Stack.Screen name="StudyGoals" options={{ headerShown: false }} />
+      <Stack.Screen name="updateUser" options={{ headerShown: false }} />
     </Stack>
   );
 }

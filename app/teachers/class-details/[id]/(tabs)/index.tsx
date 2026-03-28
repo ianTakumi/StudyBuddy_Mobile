@@ -41,6 +41,14 @@ export default function ClassInfo() {
   const [startTimeError, setStartTimeError] = useState<string>("");
   const [endTimeError, setEndTimeError] = useState<string>("");
 
+  // State for class stats
+  const [quizCount, setQuizCount] = useState<number>(0);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [flashcardCount, setFlashcardCount] = useState<number>(0);
+  const [loadingFlashcards, setLoadingFlashcards] = useState(true);
+  const [averageScore, setAverageScore] = useState<number>(0);
+  const [loadingAverage, setLoadingAverage] = useState(true);
+
   // Parse schedule from params (it's a JSON string)
   const parseSchedule = (scheduleStr: string): ScheduleItem[] => {
     try {
@@ -73,6 +81,73 @@ export default function ClassInfo() {
     "Saturday",
     "Sunday",
   ];
+
+  // Fetch class quiz count
+  const fetchClassQuizCount = async () => {
+    try {
+      const response = await client.get(`/quizzes/class/${params.id}/count`);
+      if (response.data.success) {
+        setQuizCount(response.data.data.total_quizzes || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching quiz count:", error);
+      setQuizCount(0);
+    }
+  };
+
+  // Fetch class flashcard count
+  const fetchClassFlashcardCount = async () => {
+    try {
+      const response = await client.get(
+        `/flashcards-class/class/${params.id}/count`,
+      );
+      if (response.data.success) {
+        setFlashcardCount(response.data.data.total_flashcard_sets || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching flashcard count:", error);
+      setFlashcardCount(0);
+    }
+  };
+
+  // Fetch class average score
+  const fetchClassAverageScore = async () => {
+    try {
+      setLoadingAverage(true);
+      const response = await client.get(`/quizzes/class/${params.id}/average`);
+      if (response.data.success) {
+        setAverageScore(response.data.data.average_score || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching average score:", error);
+      setAverageScore(0);
+    } finally {
+      setLoadingAverage(false);
+    }
+  };
+
+  // Combined loading function
+  const fetchAllStats = async () => {
+    setLoadingStats(true);
+    setLoadingFlashcards(true);
+    setLoadingAverage(true);
+
+    await Promise.all([
+      fetchClassQuizCount(),
+      fetchClassFlashcardCount(),
+      fetchClassAverageScore(),
+    ]);
+
+    setLoadingStats(false);
+    setLoadingFlashcards(false);
+    setLoadingAverage(false);
+  };
+
+  useEffect(() => {
+    if (params.id) {
+      fetchAllStats();
+    }
+  }, [params.id]);
 
   // Helper function to format schedule for display
   const formatSchedule = (schedule: ScheduleItem[]): string => {
@@ -272,6 +347,13 @@ export default function ClassInfo() {
     return `${schedule.day} ${schedule.startTime}${schedule.startApm} - ${schedule.endTime}${schedule.endApm}`;
   };
 
+  // Helper function to get score color based on percentage
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+
   return (
     <>
       <ScrollView className="flex-1 bg-white">
@@ -400,7 +482,7 @@ export default function ClassInfo() {
           </View>
         </View>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Only Quizzes and Flashcards */}
         <View className="px-6 mt-6">
           <Text className="text-xl font-bold text-gray-900 mb-4">
             Quick Actions
@@ -432,101 +514,147 @@ export default function ClassInfo() {
             <TouchableOpacity
               className="w-[48%] px-1 mb-3"
               onPress={() =>
-                router.push(`/teachers/class-details/${params.id}/assignments`)
+                router.push(`/teachers/class-details/${params.id}/flashcards`)
               }
             >
               <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-200 items-center">
-                <View className="w-12 h-12 bg-blue-100 rounded-xl items-center justify-center mb-3">
-                  <Ionicons name="create-outline" size={24} color="#3B82F6" />
+                <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center mb-3">
+                  <Ionicons name="flash-outline" size={24} color="#10B981" />
                 </View>
                 <Text className="text-gray-900 font-bold text-center text-sm">
-                  Manage Assignments
+                  Manage Flashcards
                 </Text>
                 <Text className="text-gray-600 text-xs text-center mt-1">
-                  Assign & review work
+                  Create & manage flashcards
                 </Text>
               </View>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Quick Stats */}
-        <View className="px-6 mt-4">
+        {/* Quick Stats - Updated with real data including average score */}
+        <View className="px-6 mt-4 mb-8">
           <Text className="text-xl font-bold text-gray-900 mb-4">
             Class Overview
           </Text>
           <View className="flex-row flex-wrap justify-between -mx-1">
             <View className="w-[48%] px-1 mb-3">
-              <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
-                <View className="w-10 h-10 bg-amber-100 rounded-lg items-center justify-center mb-2">
-                  <Ionicons
-                    name="document-text-outline"
-                    size={20}
-                    color="#F59E0B"
-                  />
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/teachers/class-details/${params.id}/quizzes`)
+                }
+              >
+                <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
+                  <View className="w-10 h-10 bg-amber-100 rounded-lg items-center justify-center mb-2">
+                    <Ionicons
+                      name="document-text-outline"
+                      size={20}
+                      color="#F59E0B"
+                    />
+                  </View>
+                  {loadingStats ? (
+                    <ActivityIndicator size="small" color="#F59E0B" />
+                  ) : (
+                    <Text className="text-2xl font-bold text-gray-900">
+                      {quizCount}
+                    </Text>
+                  )}
+                  <Text className="text-gray-600 text-sm font-medium">
+                    Total Quizzes
+                  </Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">0</Text>
-                <Text className="text-gray-600 text-sm font-medium">
-                  Active Quizzes
-                </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <View className="w-[48%] px-1 mb-3">
-              <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
-                <View className="w-10 h-10 bg-blue-100 rounded-lg items-center justify-center mb-2">
-                  <Ionicons name="create-outline" size={20} color="#3B82F6" />
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/teachers/class-details/${params.id}/FlashCards`)
+                }
+              >
+                <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
+                  <View className="w-10 h-10 bg-green-100 rounded-lg items-center justify-center mb-2">
+                    <Ionicons name="flash-outline" size={20} color="#10B981" />
+                  </View>
+                  {loadingFlashcards ? (
+                    <ActivityIndicator size="small" color="#10B981" />
+                  ) : (
+                    <Text className="text-2xl font-bold text-gray-900">
+                      {flashcardCount}
+                    </Text>
+                  )}
+                  <Text className="text-gray-600 text-sm font-medium">
+                    Flashcard Sets
+                  </Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">0</Text>
-                <Text className="text-gray-600 text-sm font-medium">
-                  Pending Assignments
-                </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
-            <View className="w-[48%] px-1">
-              <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
-                <View className="w-10 h-10 bg-emerald-100 rounded-lg items-center justify-center mb-2">
-                  <Ionicons
-                    name="checkmark-done-outline"
-                    size={20}
-                    color="#10B981"
-                  />
+            <View className="w-[48%] px-1 mb-3">
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/teachers/class-details/${params.id}/students`)
+                }
+              >
+                <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
+                  <View className="w-10 h-10 bg-emerald-100 rounded-lg items-center justify-center mb-2">
+                    <Ionicons name="people-outline" size={20} color="#10B981" />
+                  </View>
+                  <Text className="text-2xl font-bold text-gray-900">
+                    {params.studentCount}
+                  </Text>
+                  <Text className="text-gray-600 text-sm font-medium">
+                    Enrolled Students
+                  </Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">0%</Text>
-                <Text className="text-gray-600 text-sm font-medium">
-                  Avg. Score
-                </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
-            <View className="w-[48%] px-1">
-              <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
-                <View className="w-10 h-10 bg-red-100 rounded-lg items-center justify-center mb-2">
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={20}
-                    color="#EF4444"
-                  />
+            <View className="w-[48%] px-1 mb-3">
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/teachers/class-details/${params.id}/quizzes`)
+                }
+              >
+                <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
+                  <View className="w-10 h-10 bg-blue-100 rounded-lg items-center justify-center mb-2">
+                    <Ionicons
+                      name="analytics-outline"
+                      size={20}
+                      color="#3B82F6"
+                    />
+                  </View>
+                  {loadingAverage ? (
+                    <ActivityIndicator size="small" color="#3B82F6" />
+                  ) : (
+                    <>
+                      <Text
+                        className={`text-2xl font-bold ${getScoreColor(averageScore)}`}
+                      >
+                        {Math.round(averageScore)}%
+                      </Text>
+                      <View className="mt-1">
+                        <View className="bg-gray-200 rounded-full h-1.5 w-full">
+                          <View
+                            className={`h-1.5 rounded-full ${
+                              averageScore >= 80
+                                ? "bg-green-500"
+                                : averageScore >= 60
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
+                            }`}
+                            style={{ width: `${averageScore}%` }}
+                          />
+                        </View>
+                      </View>
+                    </>
+                  )}
+                  <Text className="text-gray-600 text-sm font-medium mt-1">
+                    Avg. Score
+                  </Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">0</Text>
-                <Text className="text-gray-600 text-sm font-medium">
-                  Need Grading
-                </Text>
-              </View>
+              </TouchableOpacity>
             </View>
-          </View>
-        </View>
-
-        {/* Recent Activity */}
-        <View className="px-6 mt-6 mb-8">
-          <Text className="text-xl font-bold text-gray-900 mb-4">
-            Recent Activity
-          </Text>
-          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
-            <Text className="text-gray-500 text-center py-8">
-              No recent activity
-            </Text>
           </View>
         </View>
       </ScrollView>

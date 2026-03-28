@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,10 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import DatePicker from "react-native-date-picker";
 import {
   useGlobalSearchParams,
   useLocalSearchParams,
@@ -18,13 +20,13 @@ import {
 } from "expo-router";
 import { useSelector } from "react-redux";
 import client from "@/utils/axiosInstance";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 interface Quiz {
   id: string;
   title: string;
   description: string;
   due_date: string;
-  time_limit: number;
   total_points: number;
   question_count: number;
   quiz_type: string;
@@ -72,6 +74,17 @@ interface QuizSubmission {
   };
 }
 
+// Validation error interface
+interface ValidationErrors {
+  title?: string;
+  due_date?: string;
+  due_time?: string;
+  total_points?: string;
+  questions?: string;
+  points_sum_mismatch?: string;
+  [key: string]: string | undefined;
+}
+
 export default function Quizzes() {
   const params = useLocalSearchParams();
   const globalParams = useGlobalSearchParams();
@@ -80,6 +93,7 @@ export default function Quizzes() {
 
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
@@ -90,16 +104,29 @@ export default function Quizzes() {
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Date picker states
+  const [openDatePicker, setOpenDatePicker] = useState(false);
+
+  // Date and Time states
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [hour, setHour] = useState("12");
+  const [minute, setMinute] = useState("00");
+  const [ampm, setAmpm] = useState("AM");
+
   // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     due_date: "",
-    time_limit: "",
     total_points: "",
     question_count: "",
     quiz_type: "multiple_choice",
   });
+
+  // Validation errors state
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {},
+  );
 
   // Questions state
   const [questions, setQuestions] = useState<QuestionForm[]>([
@@ -116,29 +143,224 @@ export default function Quizzes() {
   // Get class ID
   const classId = globalParams.id;
 
+  // Helper function to calculate total points from questions
+  const calculateTotalPoints = () => {
+    return questions.reduce((sum, q) => sum + (q.points || 0), 0);
+  };
+
+  // Helper function to combine date and time
+  const combineDateAndTime = (
+    date: Date,
+    hourStr: string,
+    minuteStr: string,
+    ampmStr: string,
+  ): string => {
+    let hour = parseInt(hourStr);
+    const minute = parseInt(minuteStr);
+
+    // Convert to 24-hour format
+    if (ampmStr === "PM" && hour !== 12) {
+      hour += 12;
+    } else if (ampmStr === "AM" && hour === 12) {
+      hour = 0;
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(hour).padStart(2, "0");
+    const minutes = String(minute).padStart(2, "0");
+    const seconds = "00";
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
+  // Parse datetime string to separate components
+  const parseDateTime = (dateTimeStr: string) => {
+    if (!dateTimeStr) return;
+
+    const date = new Date(dateTimeStr);
+    setSelectedDate(date);
+
+    let hours = date.getHours();
+    let ampmValue = hours >= 12 ? "PM" : "AM";
+    let hour12 = hours % 12;
+    hour12 = hour12 === 0 ? 12 : hour12;
+
+    setHour(hour12.toString());
+    setMinute(date.getMinutes().toString().padStart(2, "0"));
+    setAmpm(ampmValue);
+  };
+
+  // Validation functions
+  const validateQuizForm = (): boolean => {
+    const errors: ValidationErrors = {};
+
+    // Validate title
+    if (!formData.title.trim()) {
+      errors.title = "Quiz title is required";
+    } else if (formData.title.length < 3) {
+      errors.title = "Quiz title must be at least 3 characters";
+    } else if (formData.title.length > 100) {
+      errors.title = "Quiz title must be less than 100 characters";
+    }
+
+    // Validate due date
+    if (!formData.due_date) {
+      errors.due_date = "Due date and time is required";
+    } else {
+      const selectedDateTime = new Date(formData.due_date);
+      const now = new Date();
+
+      if (isNaN(selectedDateTime.getTime())) {
+        errors.due_date = "Invalid date and time";
+      } else if (selectedDateTime < now) {
+        errors.due_date = "Due date and time cannot be in the past";
+      }
+    }
+
+    // Validate time inputs
+    const hourNum = parseInt(hour);
+    const minuteNum = parseInt(minute);
+
+    if (isNaN(hourNum) || hourNum < 1 || hourNum > 12) {
+      errors.due_time = "Hour must be between 1 and 12";
+    } else if (isNaN(minuteNum) || minuteNum < 0 || minuteNum > 59) {
+      errors.due_time = "Minute must be between 0 and 59";
+    }
+
+    // Validate total points
+    if (!formData.total_points) {
+      errors.total_points = "Total points is required";
+    } else {
+      const points = parseInt(formData.total_points);
+      if (isNaN(points) || points <= 0) {
+        errors.total_points = "Total points must be a positive number";
+      } else if (points > 1000) {
+        errors.total_points = "Total points cannot exceed 1000";
+      }
+    }
+
+    // Validate questions
+    const validQuestions = questions.filter((q) => q.question.trim() !== "");
+    if (validQuestions.length === 0) {
+      errors.questions = "At least one question is required";
+    } else {
+      let totalQuestionPoints = 0;
+
+      // Validate each question
+      for (let i = 0; i < validQuestions.length; i++) {
+        const q = validQuestions[i];
+
+        if (!q.question.trim()) {
+          errors[`question_${i}`] = `Question ${i + 1} is empty`;
+          break;
+        }
+
+        if (q.points <= 0 || isNaN(q.points)) {
+          errors[`question_${i}_points`] =
+            `Question ${i + 1} points must be positive`;
+          break;
+        }
+
+        totalQuestionPoints += q.points;
+
+        if (!q.correctAnswer.trim()) {
+          errors[`question_${i}_answer`] =
+            `Question ${i + 1} correct answer is required`;
+          break;
+        }
+
+        if (formData.quiz_type === "multiple_choice") {
+          const validOptions = q.options.filter((opt) => opt.trim() !== "");
+          if (validOptions.length < 2) {
+            errors[`question_${i}_options`] =
+              `Question ${i + 1} must have at least 2 options`;
+            break;
+          }
+
+          // Check if correct answer matches one of the options
+          if (!validOptions.includes(q.correctAnswer)) {
+            errors[`question_${i}_answer_match`] =
+              `Question ${i + 1} correct answer must match one of the options`;
+            break;
+          }
+        } else if (formData.quiz_type === "true_false") {
+          const validAnswers = ["True", "False"];
+          if (!validAnswers.includes(q.correctAnswer)) {
+            errors[`question_${i}_answer`] =
+              `Question ${i + 1} correct answer must be either "True" or "False"`;
+            break;
+          }
+        }
+      }
+
+      // Validate that total points from questions matches the quiz total points
+      const quizTotalPoints = parseInt(formData.total_points);
+      if (
+        !isNaN(quizTotalPoints) &&
+        quizTotalPoints > 0 &&
+        totalQuestionPoints !== quizTotalPoints
+      ) {
+        errors.points_sum_mismatch = `Total points from questions (${totalQuestionPoints}) does not match quiz total points (${quizTotalPoints})`;
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearValidationErrors = () => {
+    setValidationErrors({});
+  };
+
+  // Auto-update total points when questions change
+  useEffect(() => {
+    if (questions.length > 0) {
+      const totalPoints = calculateTotalPoints();
+      setFormData((prev) => ({
+        ...prev,
+        total_points: totalPoints.toString(),
+      }));
+      // Clear points sum mismatch error when auto-updating
+      if (validationErrors.points_sum_mismatch) {
+        const newErrors = { ...validationErrors };
+        delete newErrors.points_sum_mismatch;
+        setValidationErrors(newErrors);
+      }
+    }
+  }, [questions]);
+
   // Fetch quizzes
   const fetchQuizzes = async () => {
     if (!classId) {
       console.log("❌ No class ID available");
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
     try {
-      setLoading(true);
       console.log("🔄 Fetching quizzes for class:", classId);
 
       const response = await client.get(`/quizzes/${classId}`);
       if (response.data.success) {
         setQuizzes(response.data.data);
       }
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
       Alert.alert("Error", "Failed to fetch quizzes");
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  // Pull to refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchQuizzes();
+  }, [classId]);
 
   // Fetch submissions for a quiz
   const fetchSubmissions = async (quizId: string) => {
@@ -185,7 +407,7 @@ export default function Quizzes() {
   ) => {
     return questions
       .filter((q) => q.question.trim() !== "")
-      .map((question) => {
+      .map((question, index) => {
         let processedOptions: any[] = [];
         let processedCorrectAnswer = question.correctAnswer;
 
@@ -193,26 +415,18 @@ export default function Quizzes() {
           processedOptions = [
             {
               option_text: "True",
-              is_correct:
-                question.correctAnswer === "True" ||
-                question.correctAnswer === "TRUE",
+              is_correct: question.correctAnswer === "True",
             },
             {
               option_text: "False",
-              is_correct:
-                question.correctAnswer === "False" ||
-                question.correctAnswer === "FALSE",
+              is_correct: question.correctAnswer === "False",
             },
           ];
-          processedCorrectAnswer =
-            question.correctAnswer === "True" ||
-            question.correctAnswer === "TRUE"
-              ? "True"
-              : "False";
+          processedCorrectAnswer = question.correctAnswer;
         } else if (quizType === "multiple_choice") {
           processedOptions = question.options
             .filter((opt) => opt.trim() !== "")
-            .map((opt, index) => ({
+            .map((opt) => ({
               option_text: opt,
               is_correct: opt === question.correctAnswer,
             }));
@@ -224,28 +438,23 @@ export default function Quizzes() {
           options: processedOptions,
           correctAnswer: processedCorrectAnswer,
           points: question.points,
-          order_index: question.order_index || 0,
+          order_index: index,
         };
       });
   };
 
   // Create quiz
   const handleCreateQuiz = async () => {
-    if (
-      !formData.title ||
-      !formData.due_date ||
-      !formData.total_points ||
-      !formData.time_limit
-    ) {
-      Alert.alert("Error", "Please fill in all required fields");
+    // Validate form
+    if (!validateQuizForm()) {
+      Alert.alert(
+        "Validation Error",
+        "Please fix the errors before submitting",
+      );
       return;
     }
 
     const validQuestions = questions.filter((q) => q.question.trim() !== "");
-    if (validQuestions.length === 0) {
-      Alert.alert("Error", "Please add at least one question");
-      return;
-    }
 
     try {
       setSubmitting(true);
@@ -256,10 +465,12 @@ export default function Quizzes() {
       );
 
       const quizData = {
-        ...formData,
-        time_limit: parseInt(formData.time_limit),
+        title: formData.title,
+        description: formData.description,
+        due_date: formData.due_date,
         total_points: parseInt(formData.total_points),
         question_count: processedQuestions.length,
+        quiz_type: formData.quiz_type,
         questions: processedQuestions,
       };
 
@@ -280,22 +491,18 @@ export default function Quizzes() {
 
   // Update quiz
   const handleUpdateQuiz = async () => {
-    if (
-      !selectedQuiz ||
-      !formData.title ||
-      !formData.due_date ||
-      !formData.total_points ||
-      !formData.time_limit
-    ) {
-      Alert.alert("Error", "Please fill in all required fields");
+    if (!selectedQuiz) return;
+
+    // Validate form
+    if (!validateQuizForm()) {
+      Alert.alert(
+        "Validation Error",
+        "Please fix the errors before submitting",
+      );
       return;
     }
 
     const validQuestions = questions.filter((q) => q.question.trim() !== "");
-    if (validQuestions.length === 0) {
-      Alert.alert("Error", "Please add at least one question");
-      return;
-    }
 
     try {
       setSubmitting(true);
@@ -306,10 +513,12 @@ export default function Quizzes() {
       );
 
       const quizData = {
-        ...formData,
-        time_limit: parseInt(formData.time_limit),
+        title: formData.title,
+        description: formData.description,
+        due_date: formData.due_date,
         total_points: parseInt(formData.total_points),
         question_count: processedQuestions.length,
+        quiz_type: formData.quiz_type,
         questions: processedQuestions,
       };
 
@@ -383,6 +592,17 @@ export default function Quizzes() {
         points: 1,
       },
     ]);
+    // Clear validation errors when adding a new question
+    if (validationErrors.questions) {
+      const newErrors = { ...validationErrors };
+      delete newErrors.questions;
+      setValidationErrors(newErrors);
+    }
+    if (validationErrors.points_sum_mismatch) {
+      const newErrors = { ...validationErrors };
+      delete newErrors.points_sum_mismatch;
+      setValidationErrors(newErrors);
+    }
   };
 
   const updateQuestion = (index: number, field: string, value: any) => {
@@ -392,6 +612,30 @@ export default function Quizzes() {
       [field]: value,
     };
     setQuestions(updatedQuestions);
+
+    // Clear specific validation error for this question if it exists
+    if (
+      validationErrors[`question_${index}`] ||
+      validationErrors[`question_${index}_points`] ||
+      validationErrors[`question_${index}_answer`] ||
+      validationErrors[`question_${index}_options`] ||
+      validationErrors[`question_${index}_answer_match`]
+    ) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[`question_${index}`];
+      delete newErrors[`question_${index}_points`];
+      delete newErrors[`question_${index}_answer`];
+      delete newErrors[`question_${index}_options`];
+      delete newErrors[`question_${index}_answer_match`];
+      setValidationErrors(newErrors);
+    }
+
+    // Clear points sum mismatch error
+    if (validationErrors.points_sum_mismatch) {
+      const newErrors = { ...validationErrors };
+      delete newErrors.points_sum_mismatch;
+      setValidationErrors(newErrors);
+    }
   };
 
   const updateOption = (
@@ -405,12 +649,28 @@ export default function Quizzes() {
     }
     updatedQuestions[questionIndex].options[optionIndex] = value;
     setQuestions(updatedQuestions);
+
+    // Clear options validation error if it exists
+    if (validationErrors[`question_${questionIndex}_options`]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[`question_${questionIndex}_options`];
+      setValidationErrors(newErrors);
+    }
   };
 
   const removeQuestion = (index: number) => {
     if (questions.length > 1) {
       const updatedQuestions = questions.filter((_, i) => i !== index);
       setQuestions(updatedQuestions);
+
+      // Clear validation errors related to removed question
+      const newErrors = { ...validationErrors };
+      delete newErrors[`question_${index}`];
+      delete newErrors[`question_${index}_points`];
+      delete newErrors[`question_${index}_answer`];
+      delete newErrors[`question_${index}_options`];
+      delete newErrors[`question_${index}_answer_match`];
+      setValidationErrors(newErrors);
     }
   };
 
@@ -419,11 +679,14 @@ export default function Quizzes() {
       title: "",
       description: "",
       due_date: "",
-      time_limit: "",
       total_points: "",
       question_count: "",
       quiz_type: "multiple_choice",
     });
+    setSelectedDate(new Date());
+    setHour("12");
+    setMinute("00");
+    setAmpm("AM");
     setQuestions([
       {
         id: "1",
@@ -435,6 +698,7 @@ export default function Quizzes() {
       },
     ]);
     setSelectedQuiz(null);
+    clearValidationErrors();
   };
 
   useEffect(() => {
@@ -446,6 +710,7 @@ export default function Quizzes() {
           formData.quiz_type === "true_false" ? ["True", "False"] : q.options,
       }));
       setQuestions(updatedQuestions);
+      clearValidationErrors();
     }
   }, [formData.quiz_type, showAddModal, showEditModal]);
 
@@ -454,12 +719,14 @@ export default function Quizzes() {
     setFormData({
       title: quiz.title,
       description: quiz.description,
-      due_date: quiz.due_date.split("T")[0],
-      time_limit: quiz.time_limit.toString(),
+      due_date: quiz.due_date,
       total_points: quiz.total_points.toString(),
       question_count: quiz.question_count.toString(),
       quiz_type: quiz.quiz_type,
     });
+
+    // Parse the date and time
+    parseDateTime(quiz.due_date);
 
     const quizQuestions = quiz.quiz_questions || [];
     const formattedQuestions =
@@ -493,6 +760,7 @@ export default function Quizzes() {
           ];
 
     setQuestions(formattedQuestions);
+    clearValidationErrors();
     setShowEditModal(true);
   };
 
@@ -556,7 +824,7 @@ export default function Quizzes() {
     return "text-red-600";
   };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View className="flex-1 bg-white justify-center items-center">
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -593,16 +861,25 @@ export default function Quizzes() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             className="flex-1 ml-2 text-gray-700"
+            placeholderTextColor={"#9CA3AF"}
           />
         </View>
       </View>
 
-      {/* Quizzes List */}
+      {/* Quizzes List with Pull to Refresh */}
       <FlatList
         data={filteredQuizzes}
         keyExtractor={(item) => item.id}
         className="flex-1"
         contentContainerClassName="p-4"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
+          />
+        }
         ListEmptyComponent={
           <View className="bg-gray-50 rounded-2xl p-8 items-center mt-8">
             <Ionicons name="help-circle-outline" size={64} color="#9CA3AF" />
@@ -634,14 +911,20 @@ export default function Quizzes() {
 
           return (
             <View className="bg-white rounded-2xl p-4 mb-3 shadow-lg border border-gray-200">
+              {/* Header Section */}
               <View className="flex-row items-start justify-between mb-3">
-                <View className="flex-1">
+                <View className="flex-1 mr-2">
                   <Text className="font-bold text-gray-900 text-lg">
                     {item.title}
                   </Text>
-                  <Text className="text-gray-600 text-sm mt-1">
-                    {item.description}
-                  </Text>
+                  {item.description ? (
+                    <Text
+                      className="text-gray-600 text-sm mt-1"
+                      numberOfLines={2}
+                    >
+                      {item.description}
+                    </Text>
+                  ) : null}
                 </View>
                 <View className="bg-blue-100 rounded-lg px-2 py-1">
                   <Text className="text-blue-700 text-xs font-semibold">
@@ -650,27 +933,22 @@ export default function Quizzes() {
                 </View>
               </View>
 
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center gap-4">
+              {/* Info Row */}
+              <View className="flex-row flex-wrap items-center justify-between mb-3">
+                <View className="flex-row items-center gap-2 mb-1">
                   <View className="flex-row items-center">
                     <Ionicons
                       name="calendar-outline"
-                      size={16}
+                      size={14}
                       color="#6B7280"
                     />
-                    <Text className="text-gray-600 text-sm ml-1">
-                      {formatDate(item.due_date)}
+                    <Text className="text-gray-600 text-xs ml-1">
+                      {formatDateTime(item.due_date)}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
-                    <Ionicons name="time-outline" size={16} color="#6B7280" />
-                    <Text className="text-gray-600 text-sm ml-1">
-                      {item.time_limit} min
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <Ionicons name="list-outline" size={16} color="#6B7280" />
-                    <Text className="text-gray-600 text-sm ml-1">
+                    <Ionicons name="list-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-600 text-xs ml-1">
                       {item.quiz_questions?.length || 0} questions
                     </Text>
                   </View>
@@ -691,29 +969,28 @@ export default function Quizzes() {
                 </View>
               </View>
 
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-2">
-                  {isOverdue && (
-                    <View className="bg-red-100 rounded-lg px-2 py-1">
-                      <Text className="text-red-700 text-xs font-semibold">
-                        Overdue
-                      </Text>
-                    </View>
-                  )}
-                  {isDueSoon && !isOverdue && (
-                    <View className="bg-amber-100 rounded-lg px-2 py-1">
-                      <Text className="text-amber-700 text-xs font-semibold">
-                        Due soon
-                      </Text>
-                    </View>
-                  )}
-                </View>
+              {/* Status Badges */}
+              <View className="flex-row items-center gap-2 mb-3">
+                {isOverdue && (
+                  <View className="bg-red-100 rounded-lg px-2 py-1">
+                    <Text className="text-red-700 text-xs font-semibold">
+                      Overdue
+                    </Text>
+                  </View>
+                )}
+                {isDueSoon && !isOverdue && (
+                  <View className="bg-amber-100 rounded-lg px-2 py-1">
+                    <Text className="text-amber-700 text-xs font-semibold">
+                      Due soon
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              {/* Action Buttons */}
-              <View className="flex-row gap-2 mt-3">
+              {/* Action Buttons - Wrapped for better spacing */}
+              <View className="flex-row flex-wrap gap-2 mt-1">
                 <TouchableOpacity
-                  className="bg-blue-100 px-3 py-1 rounded-lg flex-row items-center"
+                  className="bg-blue-100 px-3 py-1.5 rounded-lg flex-row items-center"
                   onPress={() => openEditModal(item)}
                 >
                   <Ionicons name="create-outline" size={14} color="#3B82F6" />
@@ -721,8 +998,9 @@ export default function Quizzes() {
                     Edit
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
-                  className="bg-red-100 px-3 py-1 rounded-lg flex-row items-center"
+                  className="bg-red-100 px-3 py-1.5 rounded-lg flex-row items-center"
                   onPress={() => handleDeleteQuiz(item)}
                 >
                   <Ionicons name="trash-outline" size={14} color="#EF4444" />
@@ -730,8 +1008,9 @@ export default function Quizzes() {
                     Delete
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
-                  className="bg-green-100 px-3 py-1 rounded-lg flex-row items-center"
+                  className="bg-green-100 px-3 py-1.5 rounded-lg flex-row items-center"
                   onPress={() => openQuestionsModal(item)}
                 >
                   <Ionicons name="eye-outline" size={14} color="#10B981" />
@@ -739,8 +1018,9 @@ export default function Quizzes() {
                     Questions
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
-                  className="bg-purple-100 px-3 py-1 rounded-lg flex-row items-center"
+                  className="bg-purple-100 px-3 py-1.5 rounded-lg flex-row items-center"
                   onPress={() => openSubmissionsModal(item)}
                 >
                   <Ionicons name="people-outline" size={14} color="#8B5CF6" />
@@ -773,6 +1053,21 @@ export default function Quizzes() {
         removeQuestion={removeQuestion}
         submitText="Create Quiz"
         submitting={submitting}
+        validationErrors={validationErrors}
+        setValidationErrors={setValidationErrors}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        hour={hour}
+        setHour={setHour}
+        minute={minute}
+        setMinute={setMinute}
+        ampm={ampm}
+        setAmpm={setAmpm}
+        combineDateAndTime={combineDateAndTime}
+        parseDateTime={parseDateTime}
+        openDatePicker={openDatePicker}
+        setOpenDatePicker={setOpenDatePicker}
+        calculateTotalPoints={calculateTotalPoints}
       />
 
       {/* Edit Quiz Modal */}
@@ -794,6 +1089,21 @@ export default function Quizzes() {
         removeQuestion={removeQuestion}
         submitText="Update Quiz"
         submitting={submitting}
+        validationErrors={validationErrors}
+        setValidationErrors={setValidationErrors}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        hour={hour}
+        setHour={setHour}
+        minute={minute}
+        setMinute={setMinute}
+        ampm={ampm}
+        setAmpm={setAmpm}
+        combineDateAndTime={combineDateAndTime}
+        parseDateTime={parseDateTime}
+        openDatePicker={openDatePicker}
+        setOpenDatePicker={setOpenDatePicker}
+        calculateTotalPoints={calculateTotalPoints}
       />
 
       {/* Questions Modal */}
@@ -817,7 +1127,7 @@ export default function Quizzes() {
   );
 }
 
-// Reusable Quiz Modal Component
+// Reusable Quiz Modal Component with Improved UI
 interface QuizModalProps {
   visible: boolean;
   title: string;
@@ -837,6 +1147,26 @@ interface QuizModalProps {
   removeQuestion: (index: number) => void;
   submitText: string;
   submitting?: boolean;
+  validationErrors: ValidationErrors;
+  setValidationErrors: (errors: ValidationErrors) => void;
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
+  hour: string;
+  setHour: (hour: string) => void;
+  minute: string;
+  setMinute: (minute: string) => void;
+  ampm: string;
+  setAmpm: (ampm: string) => void;
+  combineDateAndTime: (
+    date: Date,
+    hour: string,
+    minute: string,
+    ampm: string,
+  ) => string;
+  parseDateTime: (dateTimeStr: string) => void;
+  openDatePicker: boolean;
+  setOpenDatePicker: (open: boolean) => void;
+  calculateTotalPoints: () => number;
 }
 
 const QuizModal: React.FC<QuizModalProps> = ({
@@ -847,194 +1177,439 @@ const QuizModal: React.FC<QuizModalProps> = ({
   formData,
   setFormData,
   questions,
+  setQuestions,
   addQuestion,
   updateQuestion,
   updateOption,
   removeQuestion,
   submitText,
   submitting = false,
+  validationErrors,
+  setValidationErrors,
+  selectedDate,
+  setSelectedDate,
+  hour,
+  setHour,
+  minute,
+  setMinute,
+  ampm,
+  setAmpm,
+  combineDateAndTime,
+  openDatePicker,
+  setOpenDatePicker,
+  calculateTotalPoints,
 }) => {
+  // Clear field validation error when user starts typing
+  const handleFieldChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+    if (validationErrors[field]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[field];
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const handleHourChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, "");
+    let hourNum = parseInt(cleaned);
+
+    if (cleaned === "") {
+      setHour("");
+    } else if (!isNaN(hourNum)) {
+      if (hourNum > 12) hourNum = 12;
+      if (hourNum < 1 && cleaned.length > 0) hourNum = 1;
+      setHour(hourNum.toString());
+    }
+
+    if (validationErrors.due_time) {
+      const newErrors = { ...validationErrors };
+      delete newErrors.due_time;
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const handleMinuteChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, "");
+    let minuteNum = parseInt(cleaned);
+
+    if (cleaned === "") {
+      setMinute("");
+    } else if (!isNaN(minuteNum)) {
+      if (minuteNum > 59) minuteNum = 59;
+      if (minuteNum < 0) minuteNum = 0;
+      setMinute(minuteNum.toString().padStart(2, "0"));
+    }
+
+    if (validationErrors.due_time) {
+      const newErrors = { ...validationErrors };
+      delete newErrors.due_time;
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const handleDateConfirm = (date: Date) => {
+    setOpenDatePicker(false);
+    setSelectedDate(date);
+    if (hour && minute) {
+      const formattedDateTime = combineDateAndTime(date, hour, minute, ampm);
+      setFormData({ ...formData, due_date: formattedDateTime });
+    }
+    if (validationErrors.due_date) {
+      const newErrors = { ...validationErrors };
+      delete newErrors.due_date;
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const updateDateTime = () => {
+    if (hour && minute) {
+      const formattedDateTime = combineDateAndTime(
+        selectedDate,
+        hour,
+        minute,
+        ampm,
+      );
+      setFormData({ ...formData, due_date: formattedDateTime });
+    }
+  };
+
+  useEffect(() => {
+    if (hour && minute) {
+      updateDateTime();
+    }
+  }, [selectedDate, hour, minute, ampm]);
+
+  // Handle quiz type change - reset options for all questions
+  useEffect(() => {
+    if (formData.quiz_type === "true_false") {
+      // When switching to True/False, update all questions to have True/False options
+      const updatedQuestions = questions.map((question) => ({
+        ...question,
+        type: "true_false",
+        options: ["True", "False"],
+        // Reset correct answer if it's not True or False
+        correctAnswer: ["True", "False"].includes(question.correctAnswer)
+          ? question.correctAnswer
+          : "",
+      }));
+      setQuestions(updatedQuestions);
+    } else if (formData.quiz_type === "multiple_choice") {
+      // When switching to Multiple Choice, update all questions to have 4 empty options
+      const updatedQuestions = questions.map((question) => ({
+        ...question,
+        type: "multiple_choice",
+        // Reset to 4 empty options
+        options: ["", "", "", ""],
+        // Reset correct answer since options changed
+        correctAnswer: "",
+      }));
+      setQuestions(updatedQuestions);
+    }
+  }, [formData.quiz_type]);
+
+  // Display total points from questions
+  const totalQuestionPoints = calculateTotalPoints();
+
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
       <View className="flex-1 justify-center items-center bg-black/50">
-        <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-h-[90%]">
-          <Text className="text-2xl font-bold text-gray-900 mb-6">{title}</Text>
+        <View className="bg-white rounded-2xl mx-4 w-11/12 max-h-[90%]">
+          <View className="p-6 border-b border-gray-200">
+            <Text className="text-2xl font-bold text-gray-900">{title}</Text>
+          </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} className="gap-6">
-            {/* Basic Info Section */}
-            <View className="gap-4">
-              <Text className="text-lg font-bold text-gray-900">
-                Basic Information
-              </Text>
-
-              <View>
-                <Text className="text-gray-700 font-medium mb-2">
-                  Quiz Title *
-                </Text>
-                <TextInput
-                  value={formData.title}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, title: text })
-                  }
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
-                  placeholder="Enter quiz title"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View>
-                <Text className="text-gray-700 font-medium mb-2">
-                  Description
-                </Text>
-                <TextInput
-                  value={formData.description}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, description: text })
-                  }
-                  multiline
-                  numberOfLines={3}
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
-                  placeholder="Enter quiz description"
-                  placeholderTextColor="#9CA3AF"
-                  textAlignVertical="top"
-                />
-              </View>
-
-              <View>
-                <Text className="text-gray-700 font-medium mb-2">
-                  Due Date *
-                </Text>
-                <TextInput
-                  value={formData.due_date}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, due_date: text })
-                  }
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Text className="text-gray-700 font-medium mb-2">
-                    Time Limit (minutes) *
-                  </Text>
-                  <TextInput
-                    value={formData.time_limit}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, time_limit: text })
-                    }
-                    keyboardType="numeric"
-                    className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
-                    placeholder="e.g., 30"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                </View>
-
-                <View className="flex-1">
-                  <Text className="text-gray-700 font-medium mb-2">
-                    Total Points *
-                  </Text>
-                  <TextInput
-                    value={formData.total_points}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, total_points: text })
-                    }
-                    keyboardType="numeric"
-                    className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
-                    placeholder="e.g., 100"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                </View>
-              </View>
-
-              <View>
-                <Text className="text-gray-700 font-medium mb-2">
-                  Quiz Type
-                </Text>
-                <View className="flex-row flex-wrap -mx-1">
-                  {[
-                    { value: "multiple_choice", label: "Multiple Choice" },
-                    { value: "true_false", label: "True/False" },
-                  ].map((type) => (
-                    <TouchableOpacity
-                      key={type.value}
-                      className={`mx-1 mb-2 px-3 py-2 rounded-lg border ${
-                        formData.quiz_type === type.value
-                          ? "bg-blue-500 border-blue-500"
-                          : "bg-white border-gray-300"
-                      }`}
-                      onPress={() =>
-                        setFormData({ ...formData, quiz_type: type.value })
-                      }
-                    >
-                      <Text
-                        className={`text-sm font-medium ${
-                          formData.quiz_type === type.value
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {type.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </View>
-
-            {/* Questions Section */}
-            <View className="gap-4">
-              <View className="flex-row justify-between items-center">
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            extraScrollHeight={100}
+            enableOnAndroid={true}
+            contentContainerStyle={{ padding: 24 }}
+          >
+            <View className="gap-6">
+              {/* Basic Info Section */}
+              <View className="gap-4">
                 <Text className="text-lg font-bold text-gray-900">
-                  Questions
+                  Basic Information
                 </Text>
-                <TouchableOpacity
-                  className="bg-green-500 rounded-lg px-3 py-2 flex-row items-center"
-                  onPress={addQuestion}
-                >
-                  <Ionicons name="add" size={16} color="white" />
-                  <Text className="text-white font-medium ml-1">
-                    Add Question
+
+                <View>
+                  <Text className="text-gray-700 font-medium mb-2">
+                    Quiz Title *
                   </Text>
-                </TouchableOpacity>
-              </View>
-
-              {questions.map((question, questionIndex) => (
-                <View
-                  key={question.id}
-                  className="border border-gray-200 rounded-xl p-4"
-                >
-                  <View className="flex-row justify-between items-start mb-3">
-                    <Text className="text-gray-700 font-medium">
-                      Question {questionIndex + 1}
-                    </Text>
-                    {questions.length > 1 && (
-                      <TouchableOpacity
-                        onPress={() => removeQuestion(questionIndex)}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={18}
-                          color="#EF4444"
-                        />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
                   <TextInput
-                    value={question.question}
-                    onChangeText={(text) =>
-                      updateQuestion(questionIndex, "question", text)
-                    }
-                    placeholder="Enter question"
-                    className="border border-gray-300 rounded-lg px-3 py-2 mb-3 text-gray-900 bg-white"
+                    value={formData.title}
+                    onChangeText={(text) => handleFieldChange("title", text)}
+                    className={`border ${validationErrors.title ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 bg-white`}
+                    placeholder="Enter quiz title"
                     placeholderTextColor="#9CA3AF"
                   />
+                  {validationErrors.title && (
+                    <Text className="text-red-500 text-sm mt-1">
+                      {validationErrors.title}
+                    </Text>
+                  )}
+                </View>
 
-                  <View className="flex-row gap-2 mb-3">
+                <View>
+                  <Text className="text-gray-700 font-medium mb-2">
+                    Description
+                  </Text>
+                  <TextInput
+                    value={formData.description}
+                    onChangeText={(text) =>
+                      handleFieldChange("description", text)
+                    }
+                    multiline
+                    numberOfLines={3}
+                    className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
+                    placeholder="Enter quiz description"
+                    placeholderTextColor="#9CA3AF"
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {/* Date Section with DatePicker */}
+                <View>
+                  <Text className="text-gray-700 font-medium mb-2">
+                    Due Date *
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setOpenDatePicker(true)}
+                    className={`border ${validationErrors.due_date ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 bg-white flex-row items-center justify-between`}
+                  >
+                    <Text className="text-gray-900">
+                      {selectedDate.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </Text>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={20}
+                      color="#6B7280"
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Date Picker Modal */}
+                <DatePicker
+                  modal
+                  open={openDatePicker}
+                  date={selectedDate}
+                  mode="date"
+                  onConfirm={handleDateConfirm}
+                  onCancel={() => setOpenDatePicker(false)}
+                  title="Select Due Date"
+                  confirmText="OK"
+                  cancelText="Cancel"
+                />
+
+                {/* Time Section with Hour, Minute, and AM/PM */}
+                <View>
+                  <Text className="text-gray-700 font-medium mb-2">
+                    Due Time *
+                  </Text>
+                  <View className="flex-row gap-3">
                     <View className="flex-1">
+                      <Text className="text-gray-500 text-xs mb-1">
+                        Hour (1-12)
+                      </Text>
+                      <TextInput
+                        value={hour}
+                        onChangeText={handleHourChange}
+                        keyboardType="numeric"
+                        maxLength={2}
+                        className={`border ${validationErrors.due_time ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 bg-white text-center`}
+                        placeholder="HH"
+                        placeholderTextColor="#9CA3AF"
+                      />
+                    </View>
+
+                    <View className="flex-1">
+                      <Text className="text-gray-500 text-xs mb-1">
+                        Minute (00-59)
+                      </Text>
+                      <TextInput
+                        value={minute}
+                        onChangeText={handleMinuteChange}
+                        keyboardType="numeric"
+                        maxLength={2}
+                        className={`border ${validationErrors.due_time ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 bg-white text-center`}
+                        placeholder="MM"
+                        placeholderTextColor="#9CA3AF"
+                      />
+                    </View>
+
+                    <View className="flex-1">
+                      <Text className="text-gray-500 text-xs mb-1">AM/PM</Text>
+                      <View className="flex-row border border-gray-300 rounded-xl overflow-hidden">
+                        <TouchableOpacity
+                          className={`flex-1 py-3 ${ampm === "AM" ? "bg-blue-500" : "bg-white"}`}
+                          onPress={() => {
+                            setAmpm("AM");
+                            updateDateTime();
+                          }}
+                        >
+                          <Text
+                            className={`text-center font-medium ${ampm === "AM" ? "text-white" : "text-gray-700"}`}
+                          >
+                            AM
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className={`flex-1 py-3 ${ampm === "PM" ? "bg-blue-500" : "bg-white"}`}
+                          onPress={() => {
+                            setAmpm("PM");
+                            updateDateTime();
+                          }}
+                        >
+                          <Text
+                            className={`text-center font-medium ${ampm === "PM" ? "text-white" : "text-gray-700"}`}
+                          >
+                            PM
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                  {validationErrors.due_time && (
+                    <Text className="text-red-500 text-sm mt-1">
+                      {validationErrors.due_time}
+                    </Text>
+                  )}
+                  {validationErrors.due_date && (
+                    <Text className="text-red-500 text-sm mt-1">
+                      {validationErrors.due_date}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Total Points Display */}
+                <View className="bg-blue-50 rounded-xl p-3">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-blue-700 font-medium">
+                      Total Points from Questions:
+                    </Text>
+                    <Text className="text-blue-800 font-bold text-lg">
+                      {totalQuestionPoints}
+                    </Text>
+                  </View>
+                  {validationErrors.points_sum_mismatch && (
+                    <Text className="text-red-500 text-sm mt-2">
+                      {validationErrors.points_sum_mismatch}
+                    </Text>
+                  )}
+                </View>
+
+                <View>
+                  <Text className="text-gray-700 font-medium mb-2">
+                    Quiz Type
+                  </Text>
+                  <View className="flex-row flex-wrap -mx-1">
+                    {[
+                      { value: "multiple_choice", label: "Multiple Choice" },
+                      { value: "true_false", label: "True/False" },
+                    ].map((type) => (
+                      <TouchableOpacity
+                        key={type.value}
+                        className={`mx-1 mb-2 px-3 py-2 rounded-lg border ${
+                          formData.quiz_type === type.value
+                            ? "bg-blue-500 border-blue-500"
+                            : "bg-white border-gray-300"
+                        }`}
+                        onPress={() =>
+                          setFormData({ ...formData, quiz_type: type.value })
+                        }
+                      >
+                        <Text
+                          className={`text-sm font-medium ${
+                            formData.quiz_type === type.value
+                              ? "text-white"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {type.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              {/* Questions Section with Improved UI */}
+              <View className="gap-4">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-lg font-bold text-gray-900">
+                    Questions
+                  </Text>
+                  <TouchableOpacity
+                    className="bg-green-500 rounded-lg px-3 py-2 flex-row items-center"
+                    onPress={addQuestion}
+                  >
+                    <Ionicons name="add" size={16} color="white" />
+                    <Text className="text-white font-medium ml-1">
+                      Add Question
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {validationErrors.questions && (
+                  <Text className="text-red-500 text-sm text-center">
+                    {validationErrors.questions}
+                  </Text>
+                )}
+
+                {questions.map((question, questionIndex) => (
+                  <View
+                    key={question.id}
+                    className="border border-gray-200 rounded-xl p-4 bg-white"
+                  >
+                    {/* Question Header */}
+                    <View className="flex-row justify-between items-center mb-3">
+                      <View className="flex-row items-center gap-2">
+                        <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center">
+                          <Text className="text-blue-600 font-bold">
+                            {questionIndex + 1}
+                          </Text>
+                        </View>
+                        <Text className="text-gray-700 font-semibold">
+                          Question
+                        </Text>
+                      </View>
+                      {questions.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => removeQuestion(questionIndex)}
+                          className="p-2"
+                        >
+                          <Ionicons
+                            name="trash-outline"
+                            size={20}
+                            color="#EF4444"
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* Question Input */}
+                    <TextInput
+                      value={question.question}
+                      onChangeText={(text) =>
+                        updateQuestion(questionIndex, "question", text)
+                      }
+                      placeholder="Enter your question here..."
+                      className="border border-gray-300 rounded-xl px-4 py-3 mb-3 text-gray-900 bg-gray-50"
+                      placeholderTextColor="#9CA3AF"
+                      multiline
+                    />
+                    {validationErrors[`question_${questionIndex}`] && (
+                      <Text className="text-red-500 text-sm mb-2">
+                        {validationErrors[`question_${questionIndex}`]}
+                      </Text>
+                    )}
+
+                    {/* Points */}
+                    <View className="mb-3">
                       <Text className="text-gray-600 text-sm mb-1">Points</Text>
                       <TextInput
                         value={question.points.toString()}
@@ -1046,22 +1621,30 @@ const QuizModal: React.FC<QuizModalProps> = ({
                           )
                         }
                         keyboardType="numeric"
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white"
+                        className="border border-gray-300 rounded-xl px-4 py-2 text-gray-900 bg-gray-50 w-24"
                         placeholderTextColor="#9CA3AF"
                       />
+                      {validationErrors[`question_${questionIndex}_points`] && (
+                        <Text className="text-red-500 text-sm mt-1">
+                          {validationErrors[`question_${questionIndex}_points`]}
+                        </Text>
+                      )}
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-gray-600 text-sm mb-1">
-                        Correct Answer
+
+                    {/* Options Section */}
+                    <View className="mt-2">
+                      <Text className="text-gray-700 font-medium mb-3">
+                        Answer Choices
                       </Text>
+
                       {formData.quiz_type === "true_false" ? (
-                        <View className="flex-row gap-2">
-                          {["True", "False"].map((option) => (
+                        <View className="flex-row gap-3">
+                          {question.options.map((option, optionIndex) => (
                             <TouchableOpacity
-                              key={option}
-                              className={`flex-1 py-2 rounded-lg border ${
+                              key={optionIndex}
+                              className={`flex-1 py-3 rounded-xl border-2 ${
                                 question.correctAnswer === option
-                                  ? "bg-blue-500 border-blue-500"
+                                  ? "bg-green-500 border-green-500"
                                   : "bg-white border-gray-300"
                               }`}
                               onPress={() =>
@@ -1073,7 +1656,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                               }
                             >
                               <Text
-                                className={`text-center text-sm font-medium ${
+                                className={`text-center font-semibold ${
                                   question.correctAnswer === option
                                     ? "text-white"
                                     : "text-gray-700"
@@ -1085,72 +1668,130 @@ const QuizModal: React.FC<QuizModalProps> = ({
                           ))}
                         </View>
                       ) : (
-                        <TextInput
-                          value={question.correctAnswer}
-                          onChangeText={(text) =>
-                            updateQuestion(questionIndex, "correctAnswer", text)
-                          }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white"
-                          placeholderTextColor="#9CA3AF"
-                          placeholder="Enter correct answer"
-                        />
+                        <View className="gap-2">
+                          {question.options.map((option, optionIndex) => {
+                            const isSelected =
+                              question.correctAnswer === option;
+                            const hasError =
+                              validationErrors[
+                                `question_${questionIndex}_options`
+                              ];
+
+                            return (
+                              <View
+                                key={optionIndex}
+                                className="flex-row items-center gap-2"
+                              >
+                                <TouchableOpacity
+                                  onPress={() =>
+                                    updateQuestion(
+                                      questionIndex,
+                                      "correctAnswer",
+                                      option,
+                                    )
+                                  }
+                                  className="mr-2"
+                                >
+                                  <View
+                                    className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+                                      isSelected
+                                        ? "bg-green-500 border-green-500"
+                                        : "border-gray-400 bg-white"
+                                    }`}
+                                  >
+                                    {isSelected && (
+                                      <Ionicons
+                                        name="checkmark"
+                                        size={14}
+                                        color="white"
+                                      />
+                                    )}
+                                  </View>
+                                </TouchableOpacity>
+
+                                <TextInput
+                                  value={option}
+                                  onChangeText={(text) =>
+                                    updateOption(
+                                      questionIndex,
+                                      optionIndex,
+                                      text,
+                                    )
+                                  }
+                                  placeholder={`Option ${optionIndex + 1}`}
+                                  className={`flex-1 border rounded-xl px-4 py-3 text-gray-900 bg-white ${
+                                    isSelected
+                                      ? "border-green-500 bg-green-50"
+                                      : hasError
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                  }`}
+                                  placeholderTextColor="#9CA3AF"
+                                />
+                              </View>
+                            );
+                          })}
+
+                          {validationErrors[
+                            `question_${questionIndex}_options`
+                          ] && (
+                            <Text className="text-red-500 text-sm mt-1">
+                              {
+                                validationErrors[
+                                  `question_${questionIndex}_options`
+                                ]
+                              }
+                            </Text>
+                          )}
+
+                          <Text className="text-xs text-gray-400 mt-2">
+                            💡 Click the circle to mark the correct answer
+                          </Text>
+                        </View>
+                      )}
+
+                      {validationErrors[`question_${questionIndex}_answer`] && (
+                        <Text className="text-red-500 text-sm mt-2">
+                          {validationErrors[`question_${questionIndex}_answer`]}
+                        </Text>
                       )}
                     </View>
                   </View>
+                ))}
+              </View>
 
-                  {formData.quiz_type === "multiple_choice" && (
-                    <View className="gap-2">
-                      <Text className="text-gray-600 text-sm">Options</Text>
-                      {question.options?.map((option, optionIndex) => (
-                        <TextInput
-                          key={optionIndex}
-                          value={option}
-                          onChangeText={(text) =>
-                            updateOption(questionIndex, optionIndex, text)
-                          }
-                          placeholder={`Option ${optionIndex + 1}`}
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white"
-                          placeholderTextColor="#9CA3AF"
-                        />
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
-
-            {/* Action Buttons */}
-            <View className="flex-row justify-between gap-3 pt-4">
-              <TouchableOpacity
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl disabled:bg-gray-100"
-                onPress={onClose}
-                disabled={submitting}
-              >
-                <Text className="text-gray-700 font-medium text-center">
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl disabled:bg-blue-300"
-                onPress={onSubmit}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text className="text-white font-medium text-center">
-                    {submitText}
+              {/* Action Buttons */}
+              <View className="flex-row justify-between gap-3 pt-4 pb-6">
+                <TouchableOpacity
+                  className="flex-1 py-3 px-4 border border-gray-300 rounded-xl disabled:bg-gray-100"
+                  onPress={onClose}
+                  disabled={submitting}
+                >
+                  <Text className="text-gray-700 font-medium text-center">
+                    Cancel
                   </Text>
-                )}
-              </TouchableOpacity>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 py-3 px-4 bg-blue-500 rounded-xl disabled:bg-blue-300"
+                  onPress={onSubmit}
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text className="text-white font-medium text-center">
+                      {submitText}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </View>
       </View>
     </Modal>
   );
 };
-
 // Questions Modal Component
 interface QuestionsModalProps {
   visible: boolean;
@@ -1178,7 +1819,10 @@ const QuestionsModal: React.FC<QuestionsModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} className="gap-4">
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            className="mb-5 gap-4"
+          >
             <Text className="text-gray-600 mb-4">
               {quiz.quiz_questions?.length || 0} question
               {quiz.quiz_questions?.length !== 1 ? "s" : ""}
@@ -1187,7 +1831,7 @@ const QuestionsModal: React.FC<QuestionsModalProps> = ({
             {quiz.quiz_questions?.map((question, questionIndex) => (
               <View
                 key={question.id}
-                className="border border-gray-200 rounded-xl p-4"
+                className="border border-gray-200 rounded-xl p-4 mb-5"
               >
                 <Text className="text-gray-700 font-medium mb-2">
                   Question {questionIndex + 1}
@@ -1320,7 +1964,10 @@ const SubmissionsModal: React.FC<SubmissionsModalProps> = ({
                       }`}
                     >
                       <Text
-                        className={`text-sm font-semibold ${getScoreColor(submission.score, submission.total_points)}`}
+                        className={`text-sm font-semibold ${getScoreColor(
+                          submission.score,
+                          submission.total_points,
+                        )}`}
                       >
                         {submission.score}/{submission.total_points}
                       </Text>

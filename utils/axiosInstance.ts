@@ -7,7 +7,7 @@ const getBaseURL = () => {
     return "http://192.168.1.63:5000/api";
   } else {
     // Production - using your deployed server
-    return "https://studybuddy-backend-vhyz.onrender.com/api";
+    return "https://studybuddy-backend-cijx.onrender.com/api/";
   }
 };
 

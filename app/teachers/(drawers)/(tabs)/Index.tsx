@@ -11,110 +11,178 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import { useRouter } from "expo-router";
+import client from "@/utils/axiosInstance";
+
+interface Class {
+  id: string;
+  name: string;
+  subject: string;
+  grade_level: string;
+  student_count: number;
+  schedule: ScheduleItem[];
+  room: string;
+  description: string;
+  teacher_id: string;
+  created_at: string;
+  updated_at: string;
+  class_code: string;
+  class_students: { count: number }[];
+}
+
+interface ScheduleItem {
+  day: string;
+  startTime: string;
+  startApm: "AM" | "PM";
+  endTime: string;
+  endApm: "AM" | "PM";
+}
+
+interface FlashcardSet {
+  id: string;
+  title: string;
+  description: string;
+  subject: string;
+  class_id?: string;
+  user_id: string;
+  created_at: string;
+  flashcards?: any[];
+}
 
 export default function TeacherHomePage() {
-  const user = useSelector((state) => state.auth.user);
+  const user = useSelector((state: any) => state.auth.user);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
 
-  // State for dynamic data
+  // State for dashboard stats
   const [stats, setStats] = useState({
     activeClasses: 0,
     flashcardSets: 0,
     totalQuizzes: 0,
     totalStudents: 0,
-    todayClasses: [],
-    recentFlashcards: [],
-    topStudents: [],
+    todayClasses: [] as Class[],
   });
+
+  // Get today's day name
+  const getTodayDay = (): string => {
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const today = new Date();
+    return days[today.getDay()];
+  };
+
+  // Format schedule for display
+  const formatScheduleTime = (schedule: ScheduleItem[]): string => {
+    if (!schedule || schedule.length === 0) return "No schedule";
+    const today = getTodayDay();
+    const todaySchedule = schedule.find((s) => s.day === today);
+    if (todaySchedule) {
+      return `${todaySchedule.startTime}${todaySchedule.startApm} - ${todaySchedule.endTime}${todaySchedule.endApm}`;
+    }
+    return schedule
+      .map(
+        (s) => `${s.day} ${s.startTime}${s.startApm} - ${s.endTime}${s.endApm}`,
+      )
+      .join(", ");
+  };
+
+  // Fetch teacher's classes
+  const fetchTeacherClasses = async () => {
+    try {
+      const response = await client.get(`/classes/${user.id}`);
+      if (response.data.success) {
+        const classesData = response.data.data || [];
+        setClasses(classesData);
+
+        // Calculate total students across all classes
+        const totalStudents = classesData.reduce(
+          (sum: number, classItem: Class) => {
+            return sum + (classItem.student_count || 0);
+          },
+          0,
+        );
+
+        // Filter today's classes
+        const today = getTodayDay();
+        const todayClasses = classesData.filter((classItem: Class) => {
+          return classItem.schedule?.some((schedule) => schedule.day === today);
+        });
+
+        setStats((prev) => ({
+          ...prev,
+          activeClasses: classesData.length,
+          totalStudents: totalStudents,
+          todayClasses: todayClasses,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+    }
+  };
+
+  // Fetch teacher's flashcards count from the class-based flashcards
+  const fetchTeacherFlashcardCount = async () => {
+    try {
+      const response = await client.get(`/flashcards-class/count/${user.id}`);
+      if (response.data.success) {
+        setStats((prev) => ({
+          ...prev,
+          flashcardSets: response.data.data.total_flashcard_sets || 0,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching flashcard count:", error);
+    }
+  };
+
+  // Fetch teacher's flashcards (for display in recent section)
+  const fetchFlashcardSets = async () => {
+    try {
+      // Fetch flashcards sets from the API
+      const response = await client.get(`/flashcards-class/teacher/${user.id}`);
+      if (response.data.success) {
+        const sets = response.data.data || [];
+        setFlashcardSets(sets);
+      }
+    } catch (error) {
+      console.error("Error fetching flashcards:", error);
+    }
+  };
+
+  // Fetch teacher's quizzes count
+  const fetchTeacherQuizzes = async () => {
+    try {
+      const response = await client.get(`/quizzes/teacher/${user.id}/count`);
+      if (response.data.success) {
+        setStats((prev) => ({
+          ...prev,
+          totalQuizzes: response.data.data.total_quizzes || 0,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+    }
+  };
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-
-      // TODO: Replace with actual API calls
-      // const classesResponse = await client.get(`/teachers/${user.id}/classes`);
-      // const flashcardsResponse = await client.get(`/teachers/${user.id}/flashcards`);
-      // const quizzesResponse = await client.get(`/teachers/${user.id}/quizzes`);
-      // const studentsResponse = await client.get(`/teachers/${user.id}/students`);
-
-      // Using sample data for now
-      const sampleData = {
-        activeClasses: 4,
-        flashcardSets: 12,
-        totalQuizzes: 24,
-        totalStudents: 32,
-        todayClasses: [
-          {
-            subject: "Mathematics",
-            time: "9:00 AM - 10:30 AM",
-            topic: "Algebra Basics",
-            students: 15,
-            room: "Virtual Class",
-          },
-          {
-            subject: "Science",
-            time: "11:00 AM - 12:30 PM",
-            topic: "Biology Introduction",
-            students: 12,
-            room: "Virtual Class",
-          },
-          {
-            subject: "History",
-            time: "2:00 PM - 3:30 PM",
-            topic: "Philippine History",
-            students: 18,
-            room: "Virtual Class",
-          },
-        ],
-        recentFlashcards: [
-          {
-            title: "Algebra Formulas",
-            subject: "Mathematics",
-            cards: 24,
-            lastUpdated: "2 hours ago",
-            students: 12,
-          },
-          {
-            title: "Biology Terms",
-            subject: "Science",
-            cards: 18,
-            lastUpdated: "1 day ago",
-            students: 8,
-          },
-          {
-            title: "Historical Events",
-            subject: "History",
-            cards: 32,
-            lastUpdated: "2 days ago",
-            students: 15,
-          },
-        ],
-        topStudents: [
-          {
-            name: "Maria Santos",
-            subject: "Mathematics",
-            progress: "85%",
-            sessions: 12,
-          },
-          {
-            name: "Juan Dela Cruz",
-            subject: "Science",
-            progress: "78%",
-            sessions: 8,
-          },
-          {
-            name: "Anna Lopez",
-            subject: "History",
-            progress: "92%",
-            sessions: 15,
-          },
-        ],
-      };
-
-      setStats(sampleData);
+      await Promise.all([
+        fetchTeacherClasses(),
+        fetchTeacherFlashcardCount(),
+        fetchFlashcardSets(),
+        fetchTeacherQuizzes(),
+      ]);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       Alert.alert("Error", "Failed to load dashboard data");
@@ -140,8 +208,42 @@ export default function TeacherHomePage() {
   }, [user?.id]);
 
   useEffect(() => {
-    fetchDashboardData();
+    if (user?.id) {
+      fetchDashboardData();
+    }
   }, [user?.id]);
+
+  // Handle class press navigation
+  const handleClassPress = (classItem: Class) => {
+    router.push({
+      pathname: "/teachers/class-details/[id]",
+      params: {
+        id: classItem.id,
+        className: classItem.name,
+        subject: classItem.subject,
+        gradeLevel: classItem.grade_level,
+        studentCount: classItem.student_count.toString(),
+        schedule: JSON.stringify(classItem.schedule),
+        room: classItem.room,
+        description: classItem.description || "",
+        class_code: classItem.class_code,
+      },
+    });
+  };
+
+  // Handle flashcard press navigation - This is the key function
+  const handleFlashcardPress = (flashcardSet: FlashcardSet) => {
+    router.push({
+      pathname: "/teachers/FlashCardClassDetails",
+      params: {
+        id: flashcardSet.id,
+        title: flashcardSet.title,
+        className: flashcardSet.class_id
+          ? "Class Flashcard Set"
+          : "My Flashcard Set",
+      },
+    });
+  };
 
   if (loading && !refreshing) {
     return (
@@ -159,10 +261,10 @@ export default function TeacherHomePage() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={["#4A90E2"]} // Android
-          tintColor="#4A90E2" // iOS
-          title="Pull to refresh..." // iOS
-          titleColor="#6b7280" // iOS
+          colors={["#4A90E2"]}
+          tintColor="#4A90E2"
+          title="Pull to refresh..."
+          titleColor="#6b7280"
         />
       }
     >
@@ -214,7 +316,7 @@ export default function TeacherHomePage() {
               <Ionicons name="copy-outline" size={28} color="#F59E0B" />
             </View>
             <Text className="text-blue-600 text-xs font-medium mt-2">
-              Created by you
+              Across all classes
             </Text>
           </View>
 
@@ -258,132 +360,172 @@ export default function TeacherHomePage() {
         </View>
       </View>
 
-      {/* Quick Teaching Actions */}
-      <View className="px-6 mt-6">
-        <Text className="text-xl font-bold text-gray-800 mb-4">
-          Quick Actions
-        </Text>
-
-        {/* First Row - 2 items */}
-        <View className="flex-row justify-between mb-4">
-          <TouchableOpacity
-            className="bg-white rounded-xl p-4 flex-1 mr-2 shadow-sm items-center border border-gray-200"
-            onPress={() => router.push("/teachers/(drawers)/(tabs)/Classes")}
-          >
-            <View className="bg-blue-100 p-3 rounded-full">
-              <Ionicons name="school-outline" size={28} color="#4A90E2" />
-            </View>
-            <Text className="text-gray-800 font-medium mt-2 text-center">
-              Manage Classes
-            </Text>
-            <Text className="text-gray-500 text-xs text-center mt-1">
-              View & organize classes
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="bg-white rounded-xl p-4 flex-1 ml-2 shadow-sm items-center border border-gray-200"
-            onPress={() => router.push("/teachers/(drawers)/(tabs)/FlashCards")}
-          >
-            <View className="bg-green-100 p-3 rounded-full">
-              <Ionicons name="add-circle-outline" size={28} color="#10B981" />
-            </View>
-            <Text className="text-gray-800 font-medium mt-2 text-center">
-              Create Flashcards
-            </Text>
-            <Text className="text-gray-500 text-xs text-center mt-1">
-              New study set
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Second Row - Centered item */}
-        <View className="items-center">
-          <TouchableOpacity
-            className="bg-white rounded-xl p-4 w-1/2 shadow-sm items-center border border-gray-200"
-            onPress={() => router.push("/teachers/(drawers)/(tabs)/FlashCards")}
-          >
-            <View className="bg-orange-100 p-3 rounded-full">
-              <Ionicons name="copy-outline" size={28} color="#F59E0B" />
-            </View>
-            <Text className="text-gray-800 font-medium mt-2 text-center">
-              My Flashcards
-            </Text>
-            <Text className="text-gray-500 text-xs text-center mt-1">
-              View all sets
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Upcoming Classes */}
+      {/* Today's Classes */}
       <View className="px-6 mt-6">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-gray-800">
-            Today's Classes
+            Today&apos;s Classes
           </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/teachers/(drawers)/(tabs)/Classes")}
+          >
+            <Text className="text-blue-600 font-medium">View All</Text>
+          </TouchableOpacity>
         </View>
 
         <View className="bg-white rounded-xl p-4 shadow-sm">
-          {stats.todayClasses.map((classItem, index) => (
-            <View
-              key={index}
-              className={`flex-row items-center justify-between py-3 ${index < stats.todayClasses.length - 1 ? "border-b border-gray-100" : ""}`}
-            >
-              <View className="flex-1">
-                <Text className="text-gray-800 font-medium">
-                  {classItem.subject}
-                </Text>
-                <Text className="text-gray-500 text-sm">{classItem.topic}</Text>
-                <Text className="text-gray-400 text-xs mt-1">
-                  {classItem.time} • {classItem.room}
-                </Text>
-              </View>
-              <View className="items-end">
-                <Text className="text-gray-800 font-medium">
-                  {classItem.students}
-                </Text>
-                <Text className="text-gray-500 text-xs">students</Text>
-              </View>
+          {stats.todayClasses.length > 0 ? (
+            stats.todayClasses.map((classItem, index) => (
+              <TouchableOpacity
+                key={classItem.id}
+                onPress={() => handleClassPress(classItem)}
+                className={`py-3 ${index < stats.todayClasses.length - 1 ? "border-b border-gray-100" : ""}`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Text className="text-gray-800 font-medium">
+                      {classItem.name}
+                    </Text>
+                    <Text className="text-gray-500 text-sm">
+                      {classItem.subject} • {classItem.grade_level}
+                    </Text>
+                    <Text className="text-gray-400 text-xs mt-1">
+                      {formatScheduleTime(classItem.schedule)} •{" "}
+                      {classItem.room}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-gray-800 font-medium">
+                      {classItem.student_count}
+                    </Text>
+                    <Text className="text-gray-500 text-xs">students</Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#9CA3AF"
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View className="py-8 items-center">
+              <Ionicons name="calendar-outline" size={48} color="#D1D5DB" />
+              <Text className="text-gray-500 text-center mt-2">
+                No classes scheduled for today
+              </Text>
             </View>
-          ))}
+          )}
         </View>
       </View>
 
-      {/* Recent Flashcard Activity */}
+      {/* All Classes */}
       <View className="px-6 mt-6">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-xl font-bold text-gray-800">
-            Recent Flashcard Activity
-          </Text>
+          <Text className="text-xl font-bold text-gray-800">All Classes</Text>
+          <TouchableOpacity
+            onPress={() => router.push("/teachers/(drawers)/(tabs)/Classes")}
+          >
+            <Text className="text-blue-600 font-medium">View All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="bg-white rounded-xl p-4 shadow-sm">
+          {classes.length > 0 ? (
+            classes.slice(0, 3).map((classItem, index) => (
+              <TouchableOpacity
+                key={classItem.id}
+                onPress={() => handleClassPress(classItem)}
+                className={`py-3 ${index < Math.min(3, classes.length) - 1 ? "border-b border-gray-100" : ""}`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Text className="text-gray-800 font-medium">
+                      {classItem.name}
+                    </Text>
+                    <Text className="text-gray-500 text-sm">
+                      {classItem.subject} • {classItem.grade_level}
+                    </Text>
+                    <Text className="text-gray-400 text-xs mt-1">
+                      {classItem.room} • {classItem.student_count} students
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View className="py-8 items-center">
+              <Ionicons name="school-outline" size={48} color="#D1D5DB" />
+              <Text className="text-gray-500 text-center mt-2">
+                No classes yet
+              </Text>
+              <TouchableOpacity
+                className="mt-4 bg-blue-500 rounded-lg px-4 py-2"
+                onPress={() =>
+                  router.push("/teachers/(drawers)/(tabs)/Classes")
+                }
+              >
+                <Text className="text-white font-medium">
+                  Create Your First Class
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Recent Flashcards - Updated with working navigation */}
+      <View className="px-6 mt-6 mb-8">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-xl font-bold text-gray-800">My Flashcards</Text>
           <TouchableOpacity onPress={() => router.push("/flashcards")}>
             <Text className="text-blue-600 font-medium">View All</Text>
           </TouchableOpacity>
         </View>
 
         <View className="bg-white rounded-xl p-4 shadow-sm">
-          {stats.recentFlashcards.map((flashcard, index) => (
-            <View
-              key={index}
-              className={`flex-row items-center justify-between py-3 ${index < stats.recentFlashcards.length - 1 ? "border-b border-gray-100" : ""}`}
-            >
-              <View className="flex-1">
-                <Text className="text-gray-800 font-medium">
-                  {flashcard.title}
+          {flashcardSets.length > 0 ? (
+            flashcardSets.slice(0, 3).map((flashcard, index) => (
+              <TouchableOpacity
+                key={flashcard.id}
+                onPress={() => handleFlashcardPress(flashcard)}
+                className={`py-3 ${index < Math.min(3, flashcardSets.length) - 1 ? "border-b border-gray-100" : ""}`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Text className="text-gray-800 font-medium">
+                      {flashcard.title}
+                    </Text>
+                    <Text className="text-gray-500 text-sm">
+                      {flashcard.subject || "General"} •{" "}
+                      {flashcard.flashcards?.length || 0} cards
+                    </Text>
+                    <Text className="text-gray-400 text-xs mt-1">
+                      Created:{" "}
+                      {new Date(flashcard.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View className="py-8 items-center">
+              <Ionicons name="copy-outline" size={48} color="#D1D5DB" />
+              <Text className="text-gray-500 text-center mt-2">
+                No flashcards yet
+              </Text>
+              <TouchableOpacity
+                className="mt-4 bg-blue-500 rounded-lg px-4 py-2"
+                onPress={() => router.push("/flashcards/create")}
+              >
+                <Text className="text-white font-medium">
+                  Create Flashcards
                 </Text>
-                <Text className="text-gray-500 text-sm">
-                  {flashcard.subject} • {flashcard.cards} cards
-                </Text>
-                <Text className="text-gray-400 text-xs mt-1">
-                  Updated {flashcard.lastUpdated} • {flashcard.students}{" "}
-                  students using
-                </Text>
-              </View>
-              <TouchableOpacity className="bg-blue-50 p-2 rounded-lg">
-                <Ionicons name="play-outline" size={16} color="#4A90E2" />
               </TouchableOpacity>
             </View>
-          ))}
+          )}
         </View>
       </View>
     </ScrollView>

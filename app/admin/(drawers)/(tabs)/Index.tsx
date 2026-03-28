@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PieChart, LineChart } from "react-native-chart-kit";
@@ -33,7 +34,7 @@ export default function Dashboard() {
   const [goals, setGoals] = useState([]);
   const [flashcardSets, setFlashcardSets] = useState([]);
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to show spinner immediately
   const [refreshing, setRefreshing] = useState(false);
 
   // Calculate role distribution from fetched users (excluding admin)
@@ -438,12 +439,17 @@ export default function Dashboard() {
     </View>
   );
 
-  const quickActions = [
-    { icon: "person-add", title: "Add User", color: "#4A90E2" },
-    { icon: "document-text", title: "Review Content", color: "#34C759" },
-    { icon: "stats-chart", title: "View Reports", color: "#FF9500" },
-    { icon: "time-outline", title: "Study Stats", color: "#AF52DE" },
-  ];
+  // Show loading spinner while initial data is being fetched
+  if (loading) {
+    return (
+      <View className="flex-1 bg-gray-50 items-center justify-center">
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text className="text-gray-600 mt-4 text-base">
+          Loading dashboard...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -465,9 +471,6 @@ export default function Dashboard() {
           Admin Dashboard
         </Text>
         <Text className="text-gray-600 mt-1">Welcome back!</Text>
-        {loading && (
-          <Text className="text-blue-500 text-sm mt-2">Loading data...</Text>
-        )}
       </View>
 
       {/* Quick Stats Grid */}
@@ -768,7 +771,7 @@ export default function Dashboard() {
 
       {/* User Roles Pie Chart (Excluding Admin) */}
       {pieChartData.length > 0 && (
-        <View className="px-4 mt-4">
+        <View className="px-4 mt-4 mb-20">
           <Text className="text-lg font-semibold text-gray-800 mb-3">
             User Roles Distribution
           </Text>
@@ -817,28 +820,6 @@ export default function Dashboard() {
           </View>
         </View>
       )}
-
-      {/* Quick Actions */}
-      <View className="px-4 mt-4 mb-8">
-        <Text className="text-lg font-semibold text-gray-800 mb-3">
-          Quick Actions
-        </Text>
-        <View className="flex-row justify-between">
-          {quickActions.map((action, index) => (
-            <TouchableOpacity key={index} className="items-center">
-              <View
-                className="w-12 h-12 rounded-full items-center justify-center mb-2"
-                style={{ backgroundColor: `${action.color}20` }}
-              >
-                <Ionicons name={action.icon} size={24} color={action.color} />
-              </View>
-              <Text className="text-xs text-gray-700 text-center">
-                {action.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
     </ScrollView>
   );
 }

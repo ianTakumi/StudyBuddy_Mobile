@@ -68,142 +68,6 @@ export default function TeacherProfile() {
           <Text className="text-gray-300 text-sm mt-1">{user.email}</Text>
         </View>
 
-        {/* Teaching Overview Section */}
-        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
-          <View className="px-6 py-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-900">
-              Teaching Overview
-            </Text>
-            <Text className="text-gray-500 text-sm mt-1">
-              Your teaching summary and statistics
-            </Text>
-          </View>
-
-          {/* Teaching Stats */}
-          <View className="px-6 py-4 border-b border-gray-200">
-            <View className="flex-row justify-between mb-4">
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Active Classes</Text>
-                <Text className="text-gray-900 font-bold text-lg">4</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Total Students</Text>
-                <Text className="text-blue-600 font-bold text-lg">156</Text>
-              </View>
-            </View>
-            <View className="flex-row justify-between">
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Assignments</Text>
-                <Text className="text-gray-900 font-bold text-lg">12</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Avg. Score</Text>
-                <Text className="text-green-600 font-bold text-lg">87%</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Teaching Management Section */}
-        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
-          <View className="px-6 py-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-900">
-              Teaching Management
-            </Text>
-            <Text className="text-gray-500 text-sm mt-1">
-              Manage your classes and teaching materials
-            </Text>
-          </View>
-
-          {/* Class Management */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/teachers/(drawers)/(tabs)/Classes")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="school-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Class Management
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Manage classes and students
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Assignment Management */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            // onPress={() => router.push("/Assignments")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons
-                  name="document-text-outline"
-                  size={20}
-                  color="#4A90E2"
-                />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Assignment Management
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Create and grade assignments
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Analytics & Reports */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            // onPress={() => router.push("/Analytics")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="bar-chart-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Analytics & Reports
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Student performance analytics
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Teaching Resources */}
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between"
-            // onPress={() => router.push("/Resources")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="library-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  Teaching Resources
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Manage teaching materials
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-
         {/* Account Settings Section */}
         <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
           <View className="px-6 py-4 border-b border-gray-200">
@@ -218,7 +82,7 @@ export default function TeacherProfile() {
           {/* Personal Information */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
-            onPress={() => router.push("/users/UpdateProfile")}
+            onPress={() => router.push("/students/UpdateProfile")}
           >
             <View className="flex-row items-center">
               <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
@@ -237,7 +101,7 @@ export default function TeacherProfile() {
           </TouchableOpacity>
 
           {/* Notifications */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between"
             // onPress={() => router.push("/Notifications")}
           >
@@ -257,9 +121,53 @@ export default function TeacherProfile() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
+        {/* Support Section */}
+        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
+          <View className="px-6 py-4 border-b border-gray-200">
+            <Text className="text-lg font-semibold text-gray-900">Support</Text>
+          </View>
+
+          {/* Help & Support */}
+          <TouchableOpacity
+            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            onPress={() => router.push("/students/Contact")}
+          >
+            <View className="flex-row items-center">
+              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+                <Ionicons
+                  name="help-circle-outline"
+                  size={20}
+                  color="#4A90E2"
+                />
+              </View>
+              <Text className="text-gray-900 font-medium">Help & Support</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          {/* About StudyBuddy */}
+          <TouchableOpacity
+            className="px-6 py-4 flex-row items-center justify-between"
+            onPress={() => router.push("/students/AboutUs")}
+          >
+            <View className="flex-row items-center">
+              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="#4A90E2"
+                />
+              </View>
+              <Text className="text-gray-900 font-medium">
+                About StudyBuddy
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+        </View>
         {/* Log Out */}
         <TouchableOpacity
           className="bg-white mt-6 mx-4 rounded-2xl px-6 py-4 flex-row items-center justify-between border border-gray-200 mb-8"
