@@ -514,7 +514,7 @@ export default function ClassInfo() {
             <TouchableOpacity
               className="w-[48%] px-1 mb-3"
               onPress={() =>
-                router.push(`/teachers/class-details/${params.id}/flashcards`)
+                router.push(`/teachers/class-details/${params.id}/FlashCards`)
               }
             >
               <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-200 items-center">

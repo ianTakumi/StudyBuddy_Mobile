@@ -281,7 +281,7 @@ export default function TeacherHomePage() {
       {/* Teaching Performance Metrics */}
       <View className="px-6 mt-6">
         <Text className="text-xl font-bold text-gray-800 mb-4">
-          Today's Overview
+          Today&apos;s Overview
         </Text>
         <View className="flex-row flex-wrap justify-between">
           {/* Active Classes */}
@@ -479,9 +479,6 @@ export default function TeacherHomePage() {
       <View className="px-6 mt-6 mb-8">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-gray-800">My Flashcards</Text>
-          <TouchableOpacity onPress={() => router.push("/flashcards")}>
-            <Text className="text-blue-600 font-medium">View All</Text>
-          </TouchableOpacity>
         </View>
 
         <View className="bg-white rounded-xl p-4 shadow-sm">
@@ -516,14 +513,14 @@ export default function TeacherHomePage() {
               <Text className="text-gray-500 text-center mt-2">
                 No flashcards yet
               </Text>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 className="mt-4 bg-blue-500 rounded-lg px-4 py-2"
                 onPress={() => router.push("/flashcards/create")}
               >
                 <Text className="text-white font-medium">
                   Create Flashcards
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           )}
         </View>
