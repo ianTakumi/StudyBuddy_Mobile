@@ -91,7 +91,9 @@ const LoginScreen: React.FC = () => {
             style={{ width: 100, height: 100 }}
           />
         </View>
-        <Text className="text-2xl font-bold text-gray-800">PTCIANS</Text>
+        <Text className="text-2xl font-bold text-gray-800">
+          PTCIANS - Study Buddy
+        </Text>
         <Text className="text-gray-500 mt-1">Your Learning Companion</Text>
       </View>
 

@@ -14,7 +14,9 @@ export default function AboutUs() {
         <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
           <Ionicons name="arrow-back" size={24} color="#4A90E2" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">About PTCIANS</Text>
+        <Text className="text-xl font-bold text-gray-900">
+          About PTCIANS - Study Buddy
+        </Text>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
