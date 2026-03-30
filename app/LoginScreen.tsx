@@ -40,8 +40,16 @@ const LoginScreen: React.FC = () => {
       .post("/auth/login", trimmedData)
       .then((res) => {
         if (res.status === 200) {
-          // Updated for PTCIANS roles
           console.log(res.data);
+
+          // Check if user status is inactive
+          if (res.data.user.status === "inactive") {
+            alert(
+              "Your account is currently inactive. Please contact the administrator to activate your account.",
+            );
+            return; // Stop the login process
+          }
+
           dispatch(
             login({
               user: res.data.user,
@@ -52,6 +60,7 @@ const LoginScreen: React.FC = () => {
 
           dispatch(setOnboarded());
           console.log(res.data.user);
+
           // Redirect based on role
           if (res.data.user.role === "teacher") {
             router.replace("/teachers/(drawers)/(tabs)/Index");
@@ -195,7 +204,7 @@ const LoginScreen: React.FC = () => {
       </TouchableOpacity>
 
       <View className="flex-row justify-center mt-4">
-        <Text className="text-gray-500">Don't have an account? </Text>
+        <Text className="text-gray-500">Don&apos;t have an account? </Text>
         <TouchableOpacity onPress={() => router.push("/RegisterScreen")}>
           <Text className="text-blue-600 font-medium">Sign up here</Text>
         </TouchableOpacity>

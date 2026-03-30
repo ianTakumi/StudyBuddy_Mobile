@@ -21,6 +21,7 @@ interface User {
   email: string;
   phone?: string;
   role: string;
+  status: string;
   created_at: string;
   flashcardsCreated: number;
   studySessions: number;
@@ -85,6 +86,13 @@ export default function UsersScreen() {
     return matchesSearch && matchesRole;
   });
 
+  // Get only inactive teachers for selection when role is teacher
+  const getInactiveTeachers = () => {
+    return filteredUsers.filter(
+      (user) => user.role === "teacher" && user.status === "inactive",
+    );
+  };
+
   const toggleUserSelection = (userId: string) => {
     setSelectedUsers((prev) =>
       prev.includes(userId)
@@ -93,14 +101,21 @@ export default function UsersScreen() {
     );
   };
 
-  const selectAllUsers = () => {
-    if (filteredUsers.length === 0) return;
+  const selectAllInactiveTeachers = () => {
+    const inactiveTeachers = getInactiveTeachers();
+    if (inactiveTeachers.length === 0) return;
 
-    setSelectedUsers(
-      selectedUsers.length === filteredUsers.length
-        ? []
-        : filteredUsers.map((user) => user.id).filter(Boolean),
-    );
+    const inactiveTeacherIds = inactiveTeachers.map((user) => user.id);
+
+    // If all inactive teachers are already selected, deselect them
+    if (
+      selectedUsers.length === inactiveTeacherIds.length &&
+      inactiveTeacherIds.every((id) => selectedUsers.includes(id))
+    ) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(inactiveTeacherIds);
+    }
   };
 
   const handleEditUser = (user: User) => {
@@ -117,44 +132,45 @@ export default function UsersScreen() {
     });
   };
 
-  const handleUserAction = async (action: string, userId?: string) => {
-    const usersToAction = userId ? [userId] : selectedUsers;
-
-    if (usersToAction.length === 0) {
-      Alert.alert("No users selected", "Please select at least one user.");
+  const activateTeachers = async () => {
+    if (selectedUsers.length === 0) {
+      Alert.alert(
+        "No teachers selected",
+        "Please select at least one teacher to activate.",
+      );
       return;
     }
 
-    // For delete, show confirmation
     Alert.alert(
-      `${action} Users`,
-      `Are you sure you want to ${action.toLowerCase()} ${usersToAction.length} user(s)?`,
+      "Activate Teachers",
+      `Are you sure you want to activate ${selectedUsers.length} teacher(s)?`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Confirm",
-          style: "destructive",
           onPress: async () => {
             try {
-              // Handle different actions
-              switch (action.toLowerCase()) {
-                case "delete":
-                  await client.delete(`/users/${userId}`);
-                  break;
-                default:
-                  break;
-              }
+              // Activate each selected teacher
+              const activationPromises = selectedUsers.map((userId) =>
+                client.put(`/users/${userId}/activate`, { status: "active" }),
+              );
 
-              // Refresh the users list after action
+              await Promise.all(activationPromises);
+
+              // Refresh the users list after activation
               fetchUsers();
               setSelectedUsers([]);
 
               Alert.alert(
                 "Success",
-                `User(s) ${action.toLowerCase()}ed successfully`,
+                `${selectedUsers.length} teacher(s) activated successfully`,
               );
             } catch (error: any) {
-              Alert.alert("Error", `Failed to ${action.toLowerCase()} user(s)`);
+              console.error("Error activating teachers:", error);
+              Alert.alert(
+                "Error",
+                "Failed to activate teacher(s). Please try again.",
+              );
             }
           },
         },
@@ -189,6 +205,12 @@ export default function UsersScreen() {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    return status === "active"
+      ? "bg-green-100 text-green-800"
+      : "bg-red-100 text-red-800";
+  };
+
   const getUserName = (user: User) => {
     return (
       `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
@@ -205,29 +227,42 @@ export default function UsersScreen() {
   };
 
   const UserCard = ({ user }: { user: User }) => {
+    const isTeacher = user.role === "teacher";
+    const isInactiveTeacher = isTeacher && user.status === "inactive";
+    const canSelect = isTeacher; // Only teachers can be selected
+
     return (
       <TouchableOpacity
         className={`bg-white p-4 rounded-lg mb-3 border-2 ${
-          selectedUsers.includes(user.id)
+          selectedUsers.includes(user.id) && canSelect
             ? "border-blue-500 bg-blue-50"
             : "border-gray-200"
         }`}
-        onPress={() => toggleUserSelection(user.id)}
-        activeOpacity={0.7}
+        onPress={() => canSelect && toggleUserSelection(user.id)}
+        activeOpacity={canSelect ? 0.7 : 1}
       >
         <View className="flex-row justify-between items-start mb-3">
           <View className="flex-1">
-            <View className="flex-row items-center mb-1">
+            <View className="flex-row items-center mb-1 flex-wrap gap-2">
               <Text className="text-lg font-semibold text-gray-900">
                 {getUserName(user)}
               </Text>
               <View
-                className={`ml-2 px-2 py-1 rounded-full ${getRoleColor(user.role || "student")}`}
+                className={`px-2 py-1 rounded-full ${getRoleColor(user.role || "student")}`}
               >
                 <Text className="text-white text-xs font-medium capitalize">
                   {user.role || "student"}
                 </Text>
               </View>
+              {isTeacher && (
+                <View
+                  className={`px-2 py-1 rounded-full ${getStatusColor(user.status)}`}
+                >
+                  <Text className={`text-xs font-medium capitalize`}>
+                    {user.status}
+                  </Text>
+                </View>
+              )}
             </View>
             <Text className="text-gray-600 text-sm">{getUserEmail(user)}</Text>
             <Text className="text-gray-500 text-sm">{getUserPhone(user)}</Text>
@@ -245,12 +280,21 @@ export default function UsersScreen() {
             >
               <Ionicons name="create-outline" size={16} color="#4B5563" />
             </TouchableOpacity>
-            <TouchableOpacity
-              className="p-2 bg-red-100 rounded-lg"
-              onPress={() => handleUserAction("Delete", user.id)}
-            >
-              <Ionicons name="trash-outline" size={16} color="#EF4444" />
-            </TouchableOpacity>
+            {isTeacher && user.status === "inactive" && (
+              <TouchableOpacity
+                className="p-2 bg-green-100 rounded-lg"
+                onPress={() => {
+                  setSelectedUsers([user.id]);
+                  activateTeachers();
+                }}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={16}
+                  color="#10B981"
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -267,6 +311,12 @@ export default function UsersScreen() {
   }
 
   const displayUsers = filteredUsers;
+  const inactiveTeachersCount = getInactiveTeachers().length;
+  const selectedInactiveCount = selectedUsers.filter((id) =>
+    users.find(
+      (u) => u.id === id && u.role === "teacher" && u.status === "inactive",
+    ),
+  ).length;
 
   return (
     <View className="flex-1 bg-gray-50 pt-14">
@@ -339,21 +389,25 @@ export default function UsersScreen() {
         </View>
       </View>
 
-      {/* Bulk Actions - Only show when teachers are selected */}
-      {selectedRole === "teacher" && selectedUsers.length > 0 && (
+      {/* Bulk Actions - Only show when teachers filter is selected and there are inactive teachers */}
+      {selectedRole === "teacher" && inactiveTeachersCount > 0 && (
         <View className="bg-blue-50 px-4 py-3 border-b border-blue-200">
           <View className="flex-row justify-between items-center">
             <Text className="text-blue-800 font-medium">
-              {selectedUsers.length} teacher(s) selected
+              {inactiveTeachersCount} inactive teacher(s) available
+              {selectedUsers.length > 0 &&
+                ` (${selectedUsers.length} selected)`}
             </Text>
             <View className="flex-row gap-2">
-              <TouchableOpacity
-                className="px-3 py-1 bg-red-500 rounded-lg flex-row items-center"
-                onPress={() => handleUserAction("Delete")}
-              >
-                <Ionicons name="trash" size={16} color="white" />
-                <Text className="text-white text-sm ml-1">Delete</Text>
-              </TouchableOpacity>
+              {selectedUsers.length > 0 && (
+                <TouchableOpacity
+                  className="px-3 py-1 bg-green-500 rounded-lg flex-row items-center"
+                  onPress={activateTeachers}
+                >
+                  <Ionicons name="checkmark-circle" size={16} color="white" />
+                  <Text className="text-white text-sm ml-1">Activate</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -370,14 +424,14 @@ export default function UsersScreen() {
           <Text className="text-gray-600">
             Showing {displayUsers.length} user(s)
           </Text>
-          {/* Only show Select All/Deselect All when viewing teachers */}
-          {selectedRole === "teacher" && displayUsers.length > 0 && (
-            <TouchableOpacity onPress={selectAllUsers}>
+          {/* Only show Select All when viewing teachers and there are inactive teachers */}
+          {selectedRole === "teacher" && inactiveTeachersCount > 0 && (
+            <TouchableOpacity onPress={selectAllInactiveTeachers}>
               <Text className="text-blue-500 font-medium">
-                {selectedUsers.length === displayUsers.length &&
-                displayUsers.length > 0
+                {selectedInactiveCount === inactiveTeachersCount &&
+                inactiveTeachersCount > 0
                   ? "Deselect All"
-                  : "Select All"}
+                  : "Select All Inactive Teachers"}
               </Text>
             </TouchableOpacity>
           )}

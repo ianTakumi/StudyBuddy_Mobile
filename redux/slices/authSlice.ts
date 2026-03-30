@@ -4,6 +4,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  status: string;
   role: string;
 }
 
@@ -33,7 +34,7 @@ const authSlice = createSlice({
         user: User;
         access_token: string;
         refresh_token?: string;
-      }>
+      }>,
     ) => {
       state.user = action.payload.user;
       state.access_token = action.payload.access_token;
@@ -56,7 +57,7 @@ const authSlice = createSlice({
         access_token: string | null;
         refresh_token: string | null;
         hasOnboarded: boolean;
-      }>
+      }>,
     ) => {
       state.user = action.payload.user;
       state.access_token = action.payload.access_token;
@@ -77,7 +78,7 @@ const authSlice = createSlice({
       action: PayloadAction<{
         access_token: string;
         refresh_token?: string;
-      }>
+      }>,
     ) => {
       state.access_token = action.payload.access_token;
       if (action.payload.refresh_token) {
