@@ -1,25 +1,23 @@
 {
   "expo": {
-    "name": "Study Buddy",
+    "name": "PTCIANS",
     "slug": "study-buddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "studybuddy",
+    "scheme": "ptcians",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splashIcon/splash-light.png",
+      "image": "./assets/splashIcon/splash-icon-light.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff",
       "dark": {
-        "image": "./assets/splashIcon/splash-dark.png",
+        "image": "./assets/splashIcon/splash-icon-dark.png",
         "backgroundColor": "#000000"
       }
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ianTakumi.studyBuddy",
@@ -54,11 +52,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splashIcon/splash-light.png",
+          "image": "./assets/splashIcon/splash-icon-light.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "image": "./assets/splashIcon/splash-dark.png",
+            "image": "./assets/splashIcon/splash-icon-dark.png",
             "backgroundColor": "#000000"
           }
         }

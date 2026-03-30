@@ -14,9 +14,7 @@ export default function AboutUs() {
         <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
           <Ionicons name="arrow-back" size={24} color="#4A90E2" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">
-          About StudyBuddy
-        </Text>
+        <Text className="text-xl font-bold text-gray-900">About PTCIANS</Text>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -31,7 +29,7 @@ export default function AboutUs() {
             </View>
           </View>
           <Text className="text-gray-700 text-base leading-7 mb-4">
-            StudyBuddy was created to revolutionize the way students learn by
+            PTCIANS was created to revolutionize the way students learn by
             providing an interactive, gamified, and personalized mobile learning
             companion. We believe every student deserves access to effective
             study tools that make learning engaging and productive.
@@ -119,7 +117,7 @@ export default function AboutUs() {
                 The Beginning (2023)
               </Text>
               <Text className="text-gray-700 leading-6 mb-4">
-                StudyBuddy was born from the observation that students needed
+                PTCIANS was born from the observation that students needed
                 better tools to manage their study time and track their learning
                 progress effectively.
               </Text>
@@ -186,7 +184,7 @@ export default function AboutUs() {
         {/* Features Section */}
         <View className="bg-white py-8 px-6">
           <Text className="text-3xl font-bold text-blue-600 text-center mb-6">
-            Why Choose StudyBuddy?
+            Why Choose PTCIANS?
           </Text>
 
           <View className="gap-4">
@@ -263,11 +261,11 @@ export default function AboutUs() {
           </Text>
           <View className="bg-white rounded-2xl p-6 border border-blue-200">
             <Text className="text-lg font-semibold text-blue-600 text-center mb-4">
-              We're here to help you succeed!
+              We&apos;re here to help you succeed!
             </Text>
             <Text className="text-gray-700 text-center leading-6 mb-4">
-              Have questions about StudyBuddy or suggestions for improvement?
-              We'd love to hear from students, teachers, and educators.
+              Have questions about PTCIANS or suggestions for improvement?
+              We&apos;d love to hear from students, teachers, and educators.
             </Text>
 
             <TouchableOpacity

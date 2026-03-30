@@ -289,7 +289,7 @@ export default function AdminProfile() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          {/* About StudyBuddy */}
+          {/* About PTCIANS */}
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between"
             onPress={() => router.push("/admin/AboutUs")}
@@ -302,9 +302,7 @@ export default function AdminProfile() {
                   color="#4A90E2"
                 />
               </View>
-              <Text className="text-gray-900 font-medium">
-                About StudyBuddy
-              </Text>
+              <Text className="text-gray-900 font-medium">About PTCIANS</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
@@ -345,7 +343,7 @@ export default function AdminProfile() {
                   Confirm Logout
                 </Text>
                 <Text className="text-gray-600 text-center mb-6">
-                  Are you sure you want to logout from StudyBuddy Admin?
+                  Are you sure you want to logout from PTCIANS Admin?
                 </Text>
                 <View className="flex-row justify-between gap-3">
                   <TouchableOpacity

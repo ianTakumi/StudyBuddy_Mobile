@@ -116,7 +116,7 @@ export default function Contact() {
             <View className="w-10" /> {/* Spacer for balance */}
           </View>
           <Text className="text-blue-100 text-center text-base mt-2">
-            Get in touch with the StudyBuddy team
+            Get in touch with the PTCIANS team
           </Text>
         </View>
 
@@ -333,7 +333,7 @@ export default function Contact() {
                 <View>
                   <Text className="text-gray-500 text-sm">Email</Text>
                   <Text className="text-gray-900 font-semibold text-base">
-                    support@studybuddy.com
+                    support@PTCIANS.com
                   </Text>
                 </View>
               </View>

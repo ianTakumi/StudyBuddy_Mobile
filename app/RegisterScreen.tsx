@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
   Keyboard,
+  Image,
   TouchableWithoutFeedback,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -102,12 +103,13 @@ const RegisterScreen: React.FC = () => {
       >
         {/* Centered Icon */}
         <View className="items-center mb-8">
-          <View className="w-24 h-24 bg-blue-600 rounded-full justify-center items-center mb-4">
-            <Ionicons name="person-add" size={48} color="white" />
+          <View className="w-24 h-24  rounded-full justify-center items-center mb-4">
+            <Image
+              source={require("../assets/logo/ptc_withoutbg_logo.png")}
+              style={{ width: 100, height: 100 }}
+            />
           </View>
-          <Text className="text-2xl font-bold text-gray-800">
-            Join StudyBuddy
-          </Text>
+          <Text className="text-2xl font-bold text-gray-800">Join PTCIANS</Text>
           <Text className="text-gray-500 mt-1">
             Create your learning account
           </Text>

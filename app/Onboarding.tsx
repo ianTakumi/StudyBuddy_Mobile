@@ -57,7 +57,7 @@ const Onboarding: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Top Section - Blue Theme for StudyBuddy */}
+      {/* Top Section - Blue Theme for PTCIANS */}
       <View className="bg-blue-600 w-full h-[65%] rounded-b-3xl justify-center items-center px-6 pt-10">
         {/* Icon Placeholder */}
         <View className="w-72 h-72 mb-6 bg-blue-500 rounded-2xl justify-center items-center">

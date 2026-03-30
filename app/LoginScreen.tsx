@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 import { useDispatch } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,14 +40,14 @@ const LoginScreen: React.FC = () => {
       .post("/auth/login", trimmedData)
       .then((res) => {
         if (res.status === 200) {
-          // Updated for StudyBuddy roles
+          // Updated for PTCIANS roles
           console.log(res.data);
           dispatch(
             login({
               user: res.data.user,
               access_token: res.data.access_token,
               refresh_token: res.data.refresh_token,
-            })
+            }),
           );
 
           dispatch(setOnboarded());
@@ -75,10 +76,13 @@ const LoginScreen: React.FC = () => {
     <ScrollView className="flex-1 bg-white px-6 pt-20">
       {/* Centered Icon */}
       <View className="items-center mb-8">
-        <View className="w-24 h-24 bg-blue-600 rounded-full justify-center items-center mb-4">
-          <Ionicons name="school" size={48} color="white" />
+        <View className="w-24 h-24  rounded-full justify-center items-center mb-4">
+          <Image
+            source={require("../assets/logo/ptc_withoutbg_logo.png")}
+            style={{ width: 100, height: 100 }}
+          />
         </View>
-        <Text className="text-2xl font-bold text-gray-800">StudyBuddy</Text>
+        <Text className="text-2xl font-bold text-gray-800">PTCIANS</Text>
         <Text className="text-gray-500 mt-1">Your Learning Companion</Text>
       </View>
 
