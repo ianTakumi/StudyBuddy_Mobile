@@ -1,3 +1,4 @@
+import { logout } from "@/redux/slices/authSlice";
 import ActionSheetHelper from "@/utils/ActionSheetHelper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -33,7 +34,7 @@ export default function TeacherProfile() {
 
   const handleLogout = (): void => {
     ActionSheetHelper.showLogoutConfirmation(() => {
-      // dispatch(logout());
+      dispatch(logout());
       router.push("/LoginScreen");
     });
   };
