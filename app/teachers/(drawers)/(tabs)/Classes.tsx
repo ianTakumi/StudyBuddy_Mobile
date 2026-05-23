@@ -1,30 +1,28 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+import client from "@/utils/axiosInstance";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import client from "@/utils/axiosInstance";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSelector } from "react-redux";
 
-// Updated interface for schedule items - MATCHING API RESPONSE
 interface ScheduleItem {
   day: string;
   startTime: string;
-  startApm: "AM" | "PM"; // Changed from startAmpm to startApm
+  startApm: "AM" | "PM";
   endTime: string;
-  endApm: "AM" | "PM"; // Changed from endAmpm to endApm
+  endApm: "AM" | "PM";
 }
 
-// Updated Class interface with proper schedule type
 interface Class {
   id: string;
   name: string;
@@ -40,7 +38,6 @@ interface Class {
   class_code: string;
 }
 
-// Form data interface with schedule as array
 interface FormData {
   name: string;
   subject: string;
@@ -62,7 +59,6 @@ export default function Classes() {
   const [searchQuery, setSearchQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state with schedule as array
   const [formData, setFormData] = useState<FormData>({
     name: "",
     subject: "",
@@ -72,10 +68,8 @@ export default function Classes() {
     description: "",
   });
 
-  // Helper function to format schedule for display
   const formatSchedule = (schedule: ScheduleItem[]): string => {
     if (!schedule || schedule.length === 0) return "No schedule set";
-
     return schedule
       .map((item) => {
         return `${item.day} ${item.startTime}${item.startApm} - ${item.endTime}${item.endApm}`;
@@ -83,13 +77,11 @@ export default function Classes() {
       .join(", ");
   };
 
-  // Fetch classes from API
   const fetchClasses = async () => {
     try {
       setLoading(true);
       const response = await client.get(`/classes/${user?.id}`);
       if (response.data.success) {
-        console.log("Fetched classes:", response.data.data); // Debug log
         setClasses(response.data.data);
       }
     } catch (error) {
@@ -101,7 +93,6 @@ export default function Classes() {
     }
   };
 
-  // Refresh handler for pull-to-refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchClasses();
@@ -124,15 +115,12 @@ export default function Classes() {
       Alert.alert("Error", "Please fill in all required fields");
       return;
     }
-
     if (formData.schedule.length === 0) {
       Alert.alert("Error", "Please add at least one schedule");
       return;
     }
-
     try {
       setSubmitting(true);
-      // Convert schedule to match API expected format (startApm/endApm)
       const dataToSend = {
         ...formData,
         schedule: formData.schedule.map((item) => ({
@@ -143,9 +131,7 @@ export default function Classes() {
           endApm: item.endApm,
         })),
       };
-
       const response = await client.post(`/classes/${user?.id}`, dataToSend);
-
       if (response.data.success) {
         setClasses([response.data.data, ...classes]);
         setShowAddModal(false);
@@ -170,15 +156,12 @@ export default function Classes() {
       Alert.alert("Error", "Please fill in all required fields");
       return;
     }
-
     if (formData.schedule.length === 0) {
       Alert.alert("Error", "Please add at least one schedule");
       return;
     }
-
     try {
       setSubmitting(true);
-      // Convert schedule to match API expected format
       const dataToSend = {
         ...formData,
         schedule: formData.schedule.map((item) => ({
@@ -189,12 +172,10 @@ export default function Classes() {
           endApm: item.endApm,
         })),
       };
-
       const response = await client.put(
         `/classes/${user?.id}/${selectedClass.id}`,
         dataToSend,
       );
-
       if (response.data.success) {
         const updatedClasses = classes.map((classItem) =>
           classItem.id === selectedClass.id ? response.data.data : classItem,
@@ -226,7 +207,6 @@ export default function Classes() {
               const response = await client.delete(
                 `/classes/${user?.id}/${classItem.id}`,
               );
-
               if (response.data.success) {
                 const updatedClasses = classes.filter(
                   (c) => c.id !== classItem.id,
@@ -288,45 +268,77 @@ export default function Classes() {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#4A90E2" />
-        <Text className="text-gray-600 mt-4">Loading classes...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading classes...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-emerald-50">
       {/* Header */}
-      <View className="pt-12 pb-4 px-6 bg-white border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900">Classes</Text>
-        <Text className="text-gray-600 mt-1">
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+        <View className="absolute top-14 right-32 w-8 h-8 bg-emerald-300/50 rounded-full" />
+
+        <Text className="text-3xl font-bold text-white mb-1">Classes</Text>
+        <Text className="text-emerald-100 text-base">
           Manage your classes and students
         </Text>
       </View>
 
       <ScrollView
         className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#4A90E2"]}
-            tintColor="#4A90E2"
+            colors={["#10B981"]}
+            tintColor="#10B981"
             title="Pull to refresh"
             titleColor="#6B7280"
           />
         }
       >
         {/* Search Bar */}
-        <View className="mx-4 mt-4 mb-4">
-          <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
-            <Ionicons name="search" size={20} color="#6B7280" />
+        <View className="mx-4 mt-6 mb-4">
+          <View
+            className="flex-row items-center bg-white rounded-2xl px-5 py-4"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Ionicons name="search" size={20} color="#10B981" />
             <TextInput
               placeholder="Search classes..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              className="flex-1 ml-2 text-gray-700"
+              className="flex-1 ml-3 text-gray-700"
               placeholderTextColor="#9CA3AF"
             />
           </View>
@@ -334,74 +346,130 @@ export default function Classes() {
 
         {/* Add Class Button */}
         <TouchableOpacity
-          className="mx-4 mb-6 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
+          className="mx-4 mb-6 bg-emerald-500 rounded-2xl py-4 flex-row items-center justify-center"
           onPress={() => setShowAddModal(true)}
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 16,
+            elevation: 8,
+          }}
         >
-          <Ionicons name="add-circle-outline" size={20} color="white" />
-          <Text className="text-white font-semibold ml-2">
-            Create New Class
-          </Text>
+          <View className="w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-3">
+            <Ionicons name="add" size={20} color="white" />
+          </View>
+          <Text className="text-white font-bold text-lg">Create New Class</Text>
         </TouchableOpacity>
 
         {/* Classes List */}
         <View className="mx-4 mb-8">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            My Classes ({filteredClasses.length})
-          </Text>
+          <View className="flex-row items-center mb-4">
+            <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+              <Ionicons name="school-outline" size={16} color="#10B981" />
+            </View>
+            <Text className="text-lg font-bold text-gray-900">
+              My Classes ({filteredClasses.length})
+            </Text>
+          </View>
 
           {filteredClasses.length > 0 ? (
             filteredClasses.map((classItem) => (
               <TouchableOpacity
                 key={classItem.id}
-                className="bg-white rounded-xl p-4 mb-3 border border-gray-200 shadow-sm"
+                className="bg-white rounded-3xl p-5 mb-4 relative overflow-hidden"
                 onPress={() => handleClassPress(classItem)}
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 16,
+                  elevation: 5,
+                }}
               >
+                <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full opacity-70" />
+                <View className="absolute -bottom-3 -left-3 w-12 h-12 bg-emerald-50 rounded-full opacity-70" />
+
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="font-semibold text-gray-900 text-lg">
-                      {classItem.name}
-                    </Text>
-                    <Text className="text-gray-600 text-sm mt-1">
-                      {classItem.subject} • {classItem.grade_level}
-                    </Text>
-                    <View className="flex-row items-center mt-2">
-                      <Ionicons
-                        name="people-outline"
-                        size={16}
-                        color="#6B7280"
-                      />
-                      <Text className="text-gray-500 text-sm ml-1">
-                        {classItem.student_count} students
-                      </Text>
+                    <View className="flex-row items-center mb-2">
+                      <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                        <Ionicons
+                          name="book-outline"
+                          size={20}
+                          color="#10B981"
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="font-bold text-gray-900 text-lg">
+                          {classItem.name}
+                        </Text>
+                        <Text className="text-emerald-600 text-sm font-medium">
+                          {classItem.subject} • {classItem.grade_level}
+                        </Text>
+                      </View>
                     </View>
-                    <View className="flex-row items-center mt-1">
-                      <Ionicons name="time-outline" size={16} color="#6B7280" />
-                      <Text className="text-gray-500 text-sm ml-1">
-                        {formatSchedule(classItem.schedule)}
-                      </Text>
+
+                    <View className="ml-13 gap-2">
+                      <View className="flex-row items-center">
+                        <View className="w-5 h-5 bg-emerald-100 rounded-full items-center justify-center mr-1.5">
+                          <Ionicons
+                            name="people-outline"
+                            size={11}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-500 text-sm">
+                          {classItem.student_count} students
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-5 h-5 bg-emerald-100 rounded-full items-center justify-center mr-1.5">
+                          <Ionicons
+                            name="time-outline"
+                            size={11}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-500 text-sm">
+                          {formatSchedule(classItem.schedule)}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-5 h-5 bg-emerald-100 rounded-full items-center justify-center mr-1.5">
+                          <Ionicons
+                            name="location-outline"
+                            size={11}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-500 text-sm">
+                          {classItem.room}
+                        </Text>
+                      </View>
                     </View>
-                    <Text className="text-gray-500 text-sm mt-1">
-                      📍 {classItem.room}
-                    </Text>
                   </View>
                 </View>
 
-                {/* Action Buttons */}
-                <View className="flex-row mt-3 gap-2">
+                <View className="flex-row mt-4 ml-13 gap-2">
                   <TouchableOpacity
-                    className="bg-blue-100 px-3 py-1 rounded-lg"
+                    className="bg-emerald-100 px-4 py-2 rounded-full"
                     onPress={() => openEditModal(classItem)}
                   >
-                    <Text className="text-blue-600 text-xs">Edit</Text>
+                    <Text className="text-emerald-700 text-xs font-semibold">
+                      Edit
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="bg-red-100 px-3 py-1 rounded-lg"
+                    className="bg-red-50 px-4 py-2 rounded-full"
                     onPress={() => handleDeleteClass(classItem)}
                   >
-                    <Text className="text-red-600 text-xs">Delete</Text>
+                    <Text className="text-red-600 text-xs font-semibold">
+                      Delete
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="bg-green-100 px-3 py-1 rounded-lg"
+                    className="bg-emerald-500 px-4 py-2 rounded-full"
                     onPress={() => {
                       router.push({
                         pathname: "/teachers/class-students/[id]",
@@ -409,29 +477,61 @@ export default function Classes() {
                       });
                     }}
                   >
-                    <Text className="text-green-600 text-xs">Students</Text>
+                    <Text className="text-white text-xs font-semibold">
+                      Students
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
-            <View className="bg-gray-50 rounded-xl p-8 items-center">
-              <Ionicons name="school-outline" size={64} color="#9CA3AF" />
-              <Text className="text-gray-500 text-center mt-4 text-lg font-semibold">
+            <View
+              className="bg-white rounded-3xl p-8 items-center relative overflow-hidden"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                elevation: 5,
+              }}
+            >
+              <View className="absolute -top-8 -right-8 w-20 h-20 bg-emerald-50 rounded-full" />
+              <View className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-50 rounded-full" />
+
+              <View
+                className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-4"
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="school-outline" size={36} color="#10B981" />
+              </View>
+              <Text className="text-gray-800 text-lg font-bold text-center">
                 {searchQuery ? "No classes found" : "No classes yet"}
               </Text>
-              <Text className="text-gray-400 text-center text-sm mt-2">
+              <Text className="text-gray-500 text-center mt-2 text-sm">
                 {searchQuery
                   ? "Try a different search term"
                   : "Create your first class to get started"}
               </Text>
               {!searchQuery && (
                 <TouchableOpacity
-                  className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center justify-center mt-4"
+                  className="bg-emerald-500 rounded-2xl py-4 px-8 flex-row items-center justify-center mt-4"
                   onPress={() => setShowAddModal(true)}
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 16,
+                    elevation: 8,
+                  }}
                 >
                   <Ionicons name="add-circle-outline" size={20} color="white" />
-                  <Text className="text-white font-semibold ml-2">
+                  <Text className="text-white font-bold ml-2">
                     Create Your First Class
                   </Text>
                 </TouchableOpacity>
@@ -518,9 +618,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
     "Sunday",
   ];
 
-  // Time validation function (12-hour format)
   const validateTimeFormat = (time: string): boolean => {
-    // Regular expression for 12-hour format (1-12, optional leading zero)
     const timeRegex = /^(1[0-2]|0?[1-9])$/;
     return timeRegex.test(time);
   };
@@ -528,8 +626,6 @@ const ClassModal: React.FC<ClassModalProps> = ({
   const validateSchedule = (): boolean => {
     const { startTime, endTime } = currentSchedule;
     let isValid = true;
-
-    // Validate start time
     if (!startTime) {
       setStartTimeError("Please enter start time");
       isValid = false;
@@ -539,8 +635,6 @@ const ClassModal: React.FC<ClassModalProps> = ({
     } else {
       setStartTimeError("");
     }
-
-    // Validate end time
     if (!endTime) {
       setEndTimeError("Please enter end time");
       isValid = false;
@@ -550,7 +644,6 @@ const ClassModal: React.FC<ClassModalProps> = ({
     } else {
       setEndTimeError("");
     }
-
     return isValid;
   };
 
@@ -559,19 +652,14 @@ const ClassModal: React.FC<ClassModalProps> = ({
       Alert.alert("Error", "Please select a day");
       return;
     }
-
-    if (!validateSchedule()) {
-      return;
-    }
+    if (!validateSchedule()) return;
 
     if (editingIndex !== null) {
-      // Update existing schedule
       const updatedSchedules = [...formData.schedule];
       updatedSchedules[editingIndex] = currentSchedule;
       setFormData({ ...formData, schedule: updatedSchedules });
       setEditingIndex(null);
     } else {
-      // Check for duplicate schedule
       const isDuplicate = formData.schedule.some(
         (item) =>
           item.day === currentSchedule.day &&
@@ -580,20 +668,16 @@ const ClassModal: React.FC<ClassModalProps> = ({
           item.endTime === currentSchedule.endTime &&
           item.endApm === currentSchedule.endApm,
       );
-
       if (isDuplicate) {
         Alert.alert("Error", "Schedule already exists for this day and time");
         return;
       }
-
-      // Add new schedule
       setFormData({
         ...formData,
         schedule: [...formData.schedule, currentSchedule],
       });
     }
 
-    // Reset current schedule
     setCurrentSchedule({
       day: "Monday",
       startTime: "8",
@@ -652,16 +736,30 @@ const ClassModal: React.FC<ClassModalProps> = ({
     <>
       <Modal visible={visible} animationType="slide" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12 max-h-[80%]">
-            <Text className="text-xl font-bold text-gray-900 mb-4">
-              {title}
-            </Text>
+          <View
+            className="bg-white rounded-3xl p-6 mx-4 w-11/12 max-h-[80%] relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-8 -left-8 w-20 h-20 bg-emerald-50 rounded-full opacity-50" />
+
+            <View className="flex-row items-center mb-4">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="create-outline" size={20} color="#10B981" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">{title}</Text>
+            </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Class Name */}
-              <View className="mb-3">
-                <Text className="text-gray-700 font-medium mb-1">
-                  <Text className="text-red-500">* </Text> Class Name
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Class Name <Text className="text-red-500">*</Text>
                 </Text>
                 <TextInput
                   placeholder="Enter class name"
@@ -669,14 +767,14 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   onChangeText={(text) =>
                     setFormData({ ...formData, name: text })
                   }
-                  className="border border-gray-300 rounded-xl px-4 py-3"
+                  className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                  placeholderTextColor="#9CA3AF"
                 />
               </View>
 
-              {/* Subject */}
-              <View className="mb-3">
-                <Text className="text-gray-700 font-medium mb-1">
-                  <Text className="text-red-500">* </Text> Subject
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Subject <Text className="text-red-500">*</Text>
                 </Text>
                 <TextInput
                   placeholder="Enter subject"
@@ -684,68 +782,70 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   onChangeText={(text) =>
                     setFormData({ ...formData, subject: text })
                   }
-                  className="border border-gray-300 rounded-xl px-4 py-3"
+                  className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                  placeholderTextColor="#9CA3AF"
                 />
               </View>
 
-              {/* Grade Level */}
-              <View className="mb-3">
-                <Text className="text-gray-700 font-medium mb-1">
-                  <Text className="text-red-500">* </Text> Grade Level
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Grade Level <Text className="text-red-500">*</Text>
                 </Text>
                 <TextInput
-                  placeholder="Enter grade level (e.g., Grade 10, College 1st Year)"
+                  placeholder="Enter grade level"
                   value={formData.gradeLevel}
                   onChangeText={(text) =>
                     setFormData({ ...formData, gradeLevel: text })
                   }
-                  className="border border-gray-300 rounded-xl px-4 py-3"
+                  className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                  placeholderTextColor="#9CA3AF"
                 />
               </View>
 
-              {/* Schedule Section */}
-              <View className="mb-3">
-                <Text className="text-gray-700 font-medium mb-1">
-                  <Text className="text-red-500">* </Text> Schedule
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Schedule <Text className="text-red-500">*</Text>
                 </Text>
 
-                {/* Schedule List */}
                 {formData.schedule.length > 0 ? (
                   <View className="mb-2">
                     {formData.schedule.map((item, index) => (
                       <View
                         key={index}
-                        className="flex-row items-center justify-between bg-gray-50 rounded-xl p-3 mb-2"
+                        className="flex-row items-center justify-between bg-emerald-50 rounded-2xl p-3 mb-2"
                       >
-                        <Text className="text-gray-700 text-sm flex-1">
+                        <Text className="text-emerald-700 text-sm flex-1 font-medium">
                           {formatScheduleDisplay(item)}
                         </Text>
                         <View className="flex-row gap-2">
                           <TouchableOpacity
                             onPress={() => editSchedule(index)}
-                            className="bg-blue-500 px-3 py-1 rounded-lg"
+                            className="bg-emerald-500 px-3 py-1.5 rounded-full"
                           >
-                            <Text className="text-white text-xs">Edit</Text>
+                            <Text className="text-white text-xs font-semibold">
+                              Edit
+                            </Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             onPress={() => removeSchedule(index)}
-                            className="bg-red-500 px-3 py-1 rounded-lg"
+                            className="bg-red-500 px-3 py-1.5 rounded-full"
                           >
-                            <Text className="text-white text-xs">Remove</Text>
+                            <Text className="text-white text-xs font-semibold">
+                              Remove
+                            </Text>
                           </TouchableOpacity>
                         </View>
                       </View>
                     ))}
                   </View>
                 ) : (
-                  <Text className="text-gray-500 text-sm mb-2">
+                  <Text className="text-gray-500 text-sm mb-2 ml-1">
                     No schedule added yet
                   </Text>
                 )}
 
-                {/* Add Schedule Button */}
                 <TouchableOpacity
-                  className="bg-blue-500 rounded-xl py-2 px-4 flex-row items-center justify-center"
+                  className="bg-emerald-500 rounded-2xl py-3 px-4 flex-row items-center justify-center"
                   onPress={() => {
                     setEditingIndex(null);
                     setCurrentSchedule({
@@ -761,16 +861,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   }}
                 >
                   <Ionicons name="add-circle-outline" size={20} color="white" />
-                  <Text className="text-white font-medium ml-2">
+                  <Text className="text-white font-semibold ml-2">
                     Add Schedule
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Room Number */}
-              <View className="mb-3">
-                <Text className="text-gray-700 font-medium mb-1">
-                  <Text className="text-red-500">* </Text> Room Number
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Room Number <Text className="text-red-500">*</Text>
                 </Text>
                 <TextInput
                   placeholder="Enter room number"
@@ -778,13 +877,13 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   onChangeText={(text) =>
                     setFormData({ ...formData, room: text })
                   }
-                  className="border border-gray-300 rounded-xl px-4 py-3"
+                  className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                  placeholderTextColor="#9CA3AF"
                 />
               </View>
 
-              {/* Description */}
               <View className="mb-6">
-                <Text className="text-gray-700 font-medium mb-1">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                   Description
                 </Text>
                 <TextInput
@@ -795,32 +894,41 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   }
                   multiline
                   numberOfLines={3}
-                  className="border border-gray-300 rounded-xl px-4 py-3"
+                  className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                  placeholderTextColor="#9CA3AF"
                 />
               </View>
 
-              {/* Buttons */}
-              <View className="flex-row justify-between gap-3">
+              <View className="flex-row gap-3">
                 <TouchableOpacity
-                  className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                  className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                   onPress={onClose}
                   disabled={submitting}
                 >
-                  <Text className="text-gray-700 font-medium text-center">
+                  <Text className="text-gray-700 font-semibold text-center">
                     Cancel
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className={`flex-1 py-3 px-4 rounded-xl ${
-                    isFormValid() ? "bg-blue-500" : "bg-gray-300"
-                  }`}
+                  className={`flex-1 py-4 px-4 rounded-2xl ${isFormValid() ? "bg-emerald-500" : "bg-gray-300"}`}
                   onPress={onSubmit}
                   disabled={!isFormValid() || submitting}
+                  style={
+                    isFormValid()
+                      ? {
+                          shadowColor: "#10B981",
+                          shadowOffset: { width: 0, height: 8 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 16,
+                          elevation: 8,
+                        }
+                      : {}
+                  }
                 >
                   {submitting ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <Text className="text-white font-medium text-center">
+                    <Text className="text-white font-bold text-center">
                       {submitText}
                     </Text>
                   )}
@@ -831,39 +939,57 @@ const ClassModal: React.FC<ClassModalProps> = ({
         </View>
       </Modal>
 
-      {/* Schedule Input Modal with Start Time, End Time, and AM/PM */}
+      {/* Schedule Input Modal */}
       <Modal
         visible={showScheduleModal}
         animationType="slide"
         transparent={true}
       >
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
-            <Text className="text-xl font-bold text-gray-900 mb-4">
-              {editingIndex !== null ? "Edit Schedule" : "Add Schedule"}
-            </Text>
+          <View
+            className="bg-white rounded-3xl p-6 mx-4 w-11/12 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-8 -right-8 w-20 h-20 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-50 rounded-full opacity-50" />
 
-            {/* Day Selection */}
+            <View className="flex-row items-center mb-4">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="time-outline" size={20} color="#10B981" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">
+                {editingIndex !== null ? "Edit Schedule" : "Add Schedule"}
+              </Text>
+            </View>
+
             <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-2">Day</Text>
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                Day
+              </Text>
               <View className="flex-row flex-wrap gap-2">
                 {daysOfWeek.map((day) => (
                   <TouchableOpacity
                     key={day}
-                    className={`px-3 py-2 rounded-lg ${
+                    className={`px-4 py-2.5 rounded-full ${
                       currentSchedule.day === day
-                        ? "bg-blue-500"
-                        : "bg-gray-200"
+                        ? "bg-emerald-500"
+                        : "bg-emerald-50"
                     }`}
                     onPress={() =>
                       setCurrentSchedule({ ...currentSchedule, day })
                     }
                   >
                     <Text
-                      className={`${
+                      className={`font-semibold text-sm ${
                         currentSchedule.day === day
                           ? "text-white"
-                          : "text-gray-700"
+                          : "text-emerald-700"
                       }`}
                     >
                       {day.substring(0, 3)}
@@ -873,9 +999,10 @@ const ClassModal: React.FC<ClassModalProps> = ({
               </View>
             </View>
 
-            {/* Start Time with AM/PM */}
             <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-2">Start Time</Text>
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                Start Time
+              </Text>
               <View className="flex-row gap-3">
                 <View className="flex-1">
                   <TextInput
@@ -890,14 +1017,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
                       if (startTimeError) setStartTimeError("");
                     }}
                     keyboardType="numeric"
-                    className="border border-gray-300 rounded-xl px-4 py-3"
+                    className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                    placeholderTextColor="#9CA3AF"
                   />
                   {startTimeError ? (
-                    <Text className="text-red-500 text-xs mt-1">
+                    <Text className="text-red-500 text-xs mt-1 ml-2">
                       {startTimeError}
                     </Text>
                   ) : (
-                    <Text className="text-gray-400 text-xs mt-1">
+                    <Text className="text-gray-400 text-xs mt-1 ml-2">
                       Enter hour only (1-12)
                     </Text>
                   )}
@@ -905,11 +1033,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
                 <View className="w-28">
                   <View className="flex-row gap-2">
                     <TouchableOpacity
-                      className={`flex-1 py-3 rounded-xl ${
-                        currentSchedule.startApm === "AM"
-                          ? "bg-blue-500"
-                          : "bg-gray-200"
-                      }`}
+                      className={`flex-1 py-3 rounded-full ${currentSchedule.startApm === "AM" ? "bg-emerald-500" : "bg-emerald-50"}`}
                       onPress={() =>
                         setCurrentSchedule({
                           ...currentSchedule,
@@ -918,21 +1042,13 @@ const ClassModal: React.FC<ClassModalProps> = ({
                       }
                     >
                       <Text
-                        className={`text-center font-medium ${
-                          currentSchedule.startApm === "AM"
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
+                        className={`text-center font-bold ${currentSchedule.startApm === "AM" ? "text-white" : "text-emerald-700"}`}
                       >
                         AM
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className={`flex-1 py-3 rounded-xl ${
-                        currentSchedule.startApm === "PM"
-                          ? "bg-blue-500"
-                          : "bg-gray-200"
-                      }`}
+                      className={`flex-1 py-3 rounded-full ${currentSchedule.startApm === "PM" ? "bg-emerald-500" : "bg-emerald-50"}`}
                       onPress={() =>
                         setCurrentSchedule({
                           ...currentSchedule,
@@ -941,11 +1057,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
                       }
                     >
                       <Text
-                        className={`text-center font-medium ${
-                          currentSchedule.startApm === "PM"
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
+                        className={`text-center font-bold ${currentSchedule.startApm === "PM" ? "text-white" : "text-emerald-700"}`}
                       >
                         PM
                       </Text>
@@ -955,9 +1067,10 @@ const ClassModal: React.FC<ClassModalProps> = ({
               </View>
             </View>
 
-            {/* End Time with AM/PM */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-medium mb-2">End Time</Text>
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                End Time
+              </Text>
               <View className="flex-row gap-3">
                 <View className="flex-1">
                   <TextInput
@@ -972,14 +1085,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
                       if (endTimeError) setEndTimeError("");
                     }}
                     keyboardType="numeric"
-                    className="border border-gray-300 rounded-xl px-4 py-3"
+                    className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
+                    placeholderTextColor="#9CA3AF"
                   />
                   {endTimeError ? (
-                    <Text className="text-red-500 text-xs mt-1">
+                    <Text className="text-red-500 text-xs mt-1 ml-2">
                       {endTimeError}
                     </Text>
                   ) : (
-                    <Text className="text-gray-400 text-xs mt-1">
+                    <Text className="text-gray-400 text-xs mt-1 ml-2">
                       Enter hour only (1-12)
                     </Text>
                   )}
@@ -987,47 +1101,25 @@ const ClassModal: React.FC<ClassModalProps> = ({
                 <View className="w-28">
                   <View className="flex-row gap-2">
                     <TouchableOpacity
-                      className={`flex-1 py-3 rounded-xl ${
-                        currentSchedule.endApm === "AM"
-                          ? "bg-blue-500"
-                          : "bg-gray-200"
-                      }`}
+                      className={`flex-1 py-3 rounded-full ${currentSchedule.endApm === "AM" ? "bg-emerald-500" : "bg-emerald-50"}`}
                       onPress={() =>
-                        setCurrentSchedule({
-                          ...currentSchedule,
-                          endApm: "AM",
-                        })
+                        setCurrentSchedule({ ...currentSchedule, endApm: "AM" })
                       }
                     >
                       <Text
-                        className={`text-center font-medium ${
-                          currentSchedule.endApm === "AM"
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
+                        className={`text-center font-bold ${currentSchedule.endApm === "AM" ? "text-white" : "text-emerald-700"}`}
                       >
                         AM
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className={`flex-1 py-3 rounded-xl ${
-                        currentSchedule.endApm === "PM"
-                          ? "bg-blue-500"
-                          : "bg-gray-200"
-                      }`}
+                      className={`flex-1 py-3 rounded-full ${currentSchedule.endApm === "PM" ? "bg-emerald-500" : "bg-emerald-50"}`}
                       onPress={() =>
-                        setCurrentSchedule({
-                          ...currentSchedule,
-                          endApm: "PM",
-                        })
+                        setCurrentSchedule({ ...currentSchedule, endApm: "PM" })
                       }
                     >
                       <Text
-                        className={`text-center font-medium ${
-                          currentSchedule.endApm === "PM"
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
+                        className={`text-center font-bold ${currentSchedule.endApm === "PM" ? "text-white" : "text-emerald-700"}`}
                       >
                         PM
                       </Text>
@@ -1037,10 +1129,9 @@ const ClassModal: React.FC<ClassModalProps> = ({
               </View>
             </View>
 
-            {/* Buttons */}
-            <View className="flex-row justify-between gap-3">
+            <View className="flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                 onPress={() => {
                   setShowScheduleModal(false);
                   setEditingIndex(null);
@@ -1048,15 +1139,22 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   setEndTimeError("");
                 }}
               >
-                <Text className="text-gray-700 font-medium text-center">
+                <Text className="text-gray-700 font-semibold text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-blue-500 rounded-xl"
+                className="flex-1 py-4 px-4 bg-emerald-500 rounded-2xl"
                 onPress={addSchedule}
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  elevation: 8,
+                }}
               >
-                <Text className="text-white font-medium text-center">
+                <Text className="text-white font-bold text-center">
                   {editingIndex !== null ? "Update" : "Add"}
                 </Text>
               </TouchableOpacity>

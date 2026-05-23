@@ -1,58 +1,131 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
+import { Platform, View } from "react-native";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: "#4A90E2",
+        tabBarActiveTintColor: "#10B981",
         tabBarInactiveTintColor: "#9CA3AF",
         tabBarStyle: {
-          height: 60,
-          borderTopWidth: 0.3,
-          borderTopColor: "#E5E7EB",
-          backgroundColor: "#fff",
-          paddingBottom: 5,
+          height: Platform.OS === "ios" ? 85 : 70,
+          borderTopWidth: 0,
+          backgroundColor: "#FFFFFF",
+          paddingBottom: Platform.OS === "ios" ? 25 : 10,
+          paddingTop: 10,
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 20,
+          elevation: 15,
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
         },
-        tabBarIcon: ({ color, size }) => {
+        tabBarItemStyle: {
+          paddingVertical: 5,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "700",
+          marginTop: 4,
+          letterSpacing: 0.2,
+        },
+        tabBarIcon: ({ color, size, focused }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = "grid-outline";
+
           switch (route.name) {
             case "Index":
-              return <Ionicons name="grid-outline" size={22} color={color} />;
-
+              iconName = focused ? "grid" : "grid-outline";
+              break;
             case "Users":
-              return <Ionicons name="people-outline" size={22} color={color} />;
-
+              iconName = focused ? "people" : "people-outline";
+              break;
             case "Classes":
-              return <Ionicons name="school-outline" size={22} color={color} />;
-
+              iconName = focused ? "school" : "school-outline";
+              break;
             case "Content":
-              return (
-                <Ionicons
-                  name="document-text-outline"
-                  size={22}
-                  color={color}
-                />
-              );
-
+              iconName = focused ? "document-text" : "document-text-outline";
+              break;
             case "Contacts":
-              return <Ionicons name="call-outline" size={22} color={color} />;
-
+              iconName = focused ? "call" : "call-outline";
+              break;
             case "Profile":
-              return <Ionicons name="person-outline" size={22} color={color} />;
-
-            default:
-              return null;
+              iconName = focused ? "person" : "person-outline";
+              break;
           }
+
+          return (
+            <View className="relative items-center justify-center">
+              {focused && (
+                <View
+                  className="absolute w-12 h-12 bg-emerald-100 rounded-full"
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 6,
+                    elevation: 3,
+                  }}
+                />
+              )}
+
+              {focused && (
+                <View className="absolute -top-1 -right-0.5 w-3.5 h-3.5 bg-emerald-300 rounded-full opacity-60" />
+              )}
+
+              <Ionicons
+                name={iconName}
+                size={focused ? 23 : 21}
+                color={color}
+                style={{ zIndex: 1 }}
+              />
+            </View>
+          );
         },
       })}
     >
-      <Tabs.Screen name="Index" options={{ title: "Dashboard" }} />
-      <Tabs.Screen name="Users" options={{ title: "Users" }} />
-      <Tabs.Screen name="Classes" options={{ title: "Classes" }} />
-      <Tabs.Screen name="Contacts" options={{ title: "Contacts" }} />
-      <Tabs.Screen name="Profile" options={{ title: "Profile" }} />
+      <Tabs.Screen
+        name="Index"
+        options={{
+          title: "Dashboard",
+          tabBarLabel: "Dashboard",
+        }}
+      />
+      <Tabs.Screen
+        name="Users"
+        options={{
+          title: "Users",
+          tabBarLabel: "Users",
+        }}
+      />
+      <Tabs.Screen
+        name="Classes"
+        options={{
+          title: "Classes",
+          tabBarLabel: "Classes",
+        }}
+      />
+      <Tabs.Screen
+        name="Contacts"
+        options={{
+          title: "Contacts",
+          tabBarLabel: "Contacts",
+        }}
+      />
+      <Tabs.Screen
+        name="Profile"
+        options={{
+          title: "Profile",
+          tabBarLabel: "Profile",
+        }}
+      />
     </Tabs>
   );
 }

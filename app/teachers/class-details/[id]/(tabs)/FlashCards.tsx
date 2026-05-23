@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useSelector } from "react-redux";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import client from "@/utils/axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSelector } from "react-redux";
 
 interface Flashcard {
   id: string;
@@ -73,40 +73,22 @@ export default function TeacherFlashcards() {
     answer: "",
   });
 
-  // Helper function to safely get flashcards array
   const getFlashcards = (set: FlashcardSet): Flashcard[] => {
     return set.flashcards_class || [];
   };
 
-  // Validation functions
-  const isAddSetValid = () => {
-    return newSet.title.trim() !== "";
-  };
+  const isAddSetValid = () => newSet.title.trim() !== "";
+  const isEditSetValid = () => editSet.title.trim() !== "";
+  const isAddFlashcardValid = () =>
+    newFlashcard.question.trim() !== "" && newFlashcard.answer.trim() !== "";
+  const isEditFlashcardValid = () =>
+    editCardData.question.trim() !== "" && editCardData.answer.trim() !== "";
 
-  const isEditSetValid = () => {
-    return editSet.title.trim() !== "";
-  };
-
-  const isAddFlashcardValid = () => {
-    return (
-      newFlashcard.question.trim() !== "" && newFlashcard.answer.trim() !== ""
-    );
-  };
-
-  const isEditFlashcardValid = () => {
-    return (
-      editCardData.question.trim() !== "" && editCardData.answer.trim() !== ""
-    );
-  };
-
-  // Fetch all flashcard sets for this class
   const fetchFlashcardSets = async () => {
     if (!classId) {
-      console.log("No classId available, skipping fetch");
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       const response = await client.get(`/flashcards-class/class/${classId}`);
@@ -132,13 +114,11 @@ export default function TeacherFlashcards() {
     fetchFlashcardSets();
   }, [classId]);
 
-  // Create new flashcard set
   const handleAddSet = async () => {
     if (!newSet.title) {
       Alert.alert("Error", "Title is required");
       return;
     }
-
     try {
       const response = await client.post(
         `/flashcards-class/class/${classId}/sets`,
@@ -147,7 +127,6 @@ export default function TeacherFlashcards() {
           description: newSet.description,
         },
       );
-
       if (response.data.success) {
         const newSetWithFlashcards = {
           ...response.data.data,
@@ -167,13 +146,11 @@ export default function TeacherFlashcards() {
     }
   };
 
-  // Update flashcard set
   const handleUpdateSet = async () => {
     if (!editSet.title) {
       Alert.alert("Error", "Title is required");
       return;
     }
-
     try {
       const response = await client.put(
         `/flashcards-class/sets/${editSet.id}`,
@@ -182,15 +159,11 @@ export default function TeacherFlashcards() {
           description: editSet.description,
         },
       );
-
       if (response.data.success) {
         setFlashcardSets((prev) =>
           prev.map((set) =>
             set.id === editSet.id
-              ? {
-                  ...response.data.data,
-                  flashcards_class: getFlashcards(set),
-                }
+              ? { ...response.data.data, flashcards_class: getFlashcards(set) }
               : set,
           ),
         );
@@ -204,7 +177,6 @@ export default function TeacherFlashcards() {
     }
   };
 
-  // Delete flashcard set
   const deleteSet = async (id: string) => {
     Alert.alert(
       "Delete Set",
@@ -233,13 +205,11 @@ export default function TeacherFlashcards() {
     );
   };
 
-  // Add flashcard to set
   const handleAddFlashcard = async () => {
     if (!currentSet || !newFlashcard.question || !newFlashcard.answer) {
       Alert.alert("Error", "Question and answer are required");
       return;
     }
-
     try {
       const response = await client.post(
         `/flashcards-class/sets/${currentSet.id}/flashcards`,
@@ -248,7 +218,6 @@ export default function TeacherFlashcards() {
           answer: newFlashcard.answer,
         },
       );
-
       if (response.data.success) {
         setFlashcardSets((prev) =>
           prev.map((set) =>
@@ -270,7 +239,6 @@ export default function TeacherFlashcards() {
     }
   };
 
-  // Delete flashcard
   const deleteFlashcard = async (setId: string, cardId: string) => {
     Alert.alert(
       "Delete Flashcard",
@@ -310,7 +278,6 @@ export default function TeacherFlashcards() {
     );
   };
 
-  // Update flashcard
   const handleUpdateFlashcard = async (
     setId: string,
     cardId: string,
@@ -342,7 +309,6 @@ export default function TeacherFlashcards() {
     }
   };
 
-  // Edit Flashcard Modal functions
   const openEditFlashcardModal = (setId: string, card: Flashcard) => {
     setEditingCard({ setId, card });
     setEditCardData({ question: card.question, answer: card.answer });
@@ -351,23 +317,19 @@ export default function TeacherFlashcards() {
 
   const handleEditFlashcard = async () => {
     if (!editingCard) return;
-
     if (!editCardData.question || !editCardData.answer) {
       Alert.alert("Error", "Question and answer are required");
       return;
     }
-
     await handleUpdateFlashcard(editingCard.setId, editingCard.card.id, {
       question: editCardData.question,
       answer: editCardData.answer,
     });
-
     setShowEditCardModal(false);
     setEditingCard(null);
     setEditCardData({ question: "", answer: "" });
   };
 
-  // Study functions
   const startStudying = (set: FlashcardSet) => {
     const flashcards = getFlashcards(set);
     if (flashcards.length === 0) {
@@ -413,39 +375,74 @@ export default function TeacherFlashcards() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#4A90E2" />
-        <Text className="text-gray-600 mt-4">Loading flashcards...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading flashcards...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-emerald-50">
       {/* Header */}
-      <View className="pt-12 pb-4 px-6 bg-white border-b border-gray-200">
-        <View className="flex-row items-center mb-2">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-gray-900">
-            Class Flashcards
-          </Text>
-        </View>
-        <Text className="text-gray-600 mt-1">
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="flex-row items-center mb-4"
+        >
+          <View className="w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-2">
+            <Ionicons name="arrow-back" size={18} color="white" />
+          </View>
+          <Text className="text-white font-medium">Back</Text>
+        </TouchableOpacity>
+
+        <Text className="text-3xl font-bold text-white mb-1">
+          Class Flashcards
+        </Text>
+        <Text className="text-emerald-100 text-base">
           Create and manage flashcards for your class
         </Text>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Quick Actions */}
-        <View className="mx-4 mb-6 mt-4">
+        <View className="mx-4 mb-6 mt-6">
           <TouchableOpacity
-            className="bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
+            className="bg-emerald-500 rounded-2xl py-4 flex-row items-center justify-center"
             onPress={() => setShowAddSetModal(true)}
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 8,
+            }}
           >
-            <Ionicons name="add-circle-outline" size={20} color="white" />
-            <Text className="text-white font-semibold ml-2">
+            <View className="w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-3">
+              <Ionicons name="add" size={20} color="white" />
+            </View>
+            <Text className="text-white font-bold text-lg">
               Create New Flashcard Set
             </Text>
           </TouchableOpacity>
@@ -453,9 +450,14 @@ export default function TeacherFlashcards() {
 
         {/* Flashcard Sets List */}
         <View className="mx-4 mb-8">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            Flashcard Sets ({flashcardSets.length})
-          </Text>
+          <View className="flex-row items-center mb-4">
+            <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+              <Ionicons name="copy-outline" size={16} color="#10B981" />
+            </View>
+            <Text className="text-lg font-bold text-gray-900">
+              Flashcard Sets ({flashcardSets.length})
+            </Text>
+          </View>
 
           {flashcardSets.length > 0 ? (
             flashcardSets.map((set) => {
@@ -465,62 +467,91 @@ export default function TeacherFlashcards() {
               return (
                 <View
                   key={set.id}
-                  className="bg-white rounded-xl p-4 mb-3 border border-gray-200 shadow-sm"
+                  className="bg-white rounded-3xl p-5 mb-4 relative overflow-hidden"
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 16,
+                    elevation: 5,
+                  }}
                 >
+                  <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full opacity-70" />
+                  <View className="absolute -bottom-3 -left-3 w-12 h-12 bg-emerald-50 rounded-full opacity-70" />
+
                   <View className="flex-row justify-between items-start mb-3">
                     <View className="flex-1">
-                      <Text className="font-bold text-gray-900 text-lg">
-                        {set.title}
-                      </Text>
-                      {set.description && (
-                        <Text className="text-gray-600 text-sm mt-1">
-                          {set.description}
-                        </Text>
-                      )}
-                      <View className="flex-row items-center mt-2 gap-4">
-                        <Text className="text-gray-500 text-sm">
-                          {cardCount} card{cardCount !== 1 ? "s" : ""}
-                        </Text>
-                        <Text className="text-green-600 text-xs font-medium">
-                          Class Set
-                        </Text>
+                      <View className="flex-row items-center mb-2">
+                        <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                          <Ionicons
+                            name="copy-outline"
+                            size={20}
+                            color="#10B981"
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="font-bold text-gray-900 text-lg">
+                            {set.title}
+                          </Text>
+                          {set.description && (
+                            <Text className="text-gray-600 text-sm mt-0.5">
+                              {set.description}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <View className="flex-row items-center ml-13 gap-3">
+                        <View className="flex-row items-center">
+                          <View className="w-4 h-4 bg-emerald-200 rounded-full items-center justify-center mr-1">
+                            <Ionicons
+                              name="copy-outline"
+                              size={9}
+                              color="#10B981"
+                            />
+                          </View>
+                          <Text className="text-gray-500 text-sm">
+                            {cardCount} card{cardCount !== 1 ? "s" : ""}
+                          </Text>
+                        </View>
+                        <View className="bg-emerald-100 rounded-full px-3 py-0.5">
+                          <Text className="text-emerald-700 text-xs font-semibold">
+                            Class Set
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   </View>
 
-                  <View className="flex-row gap-2 flex-wrap">
+                  <View className="flex-row gap-2 flex-wrap ml-13">
                     <TouchableOpacity
-                      className="bg-green-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-emerald-500 px-4 py-2 rounded-full flex-row items-center"
                       onPress={() => startStudying(set)}
                     >
-                      <Ionicons name="play" size={14} color="#10B981" />
-                      <Text className="text-green-700 text-xs font-medium ml-1">
+                      <Ionicons name="play" size={14} color="white" />
+                      <Text className="text-white text-xs font-semibold ml-1.5">
                         Study
                       </Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
-                      className="bg-blue-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center"
                       onPress={() => openAddCardModal(set)}
                     >
-                      <Ionicons name="add" size={14} color="#3B82F6" />
-                      <Text className="text-blue-600 text-xs font-medium ml-1">
+                      <Ionicons name="add" size={14} color="#10B981" />
+                      <Text className="text-emerald-700 text-xs font-semibold ml-1.5">
                         Add Card
                       </Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
-                      className="bg-yellow-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-amber-100 px-4 py-2 rounded-full flex-row items-center"
                       onPress={() => openEditSetModal(set)}
                     >
                       <Ionicons name="create" size={14} color="#D97706" />
-                      <Text className="text-yellow-700 text-xs font-medium ml-1">
+                      <Text className="text-amber-700 text-xs font-semibold ml-1.5">
                         Edit Set
                       </Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
-                      className="bg-red-100 px-3 py-2 rounded-lg flex-row items-center mb-2"
+                      className="bg-red-50 px-3 py-2 rounded-full flex-row items-center"
                       onPress={() => deleteSet(set.id)}
                     >
                       <Ionicons
@@ -528,26 +559,22 @@ export default function TeacherFlashcards() {
                         size={14}
                         color="#EF4444"
                       />
-                      <Text className="text-red-600 text-xs font-medium ml-1">
-                        Delete
-                      </Text>
                     </TouchableOpacity>
                   </View>
 
-                  {/* Flashcards in this set */}
                   {cardCount > 0 && (
-                    <View className="mt-3 pt-3 border-t border-gray-100">
-                      <Text className="text-gray-700 text-sm font-medium mb-2">
+                    <View className="mt-4 pt-4 border-t border-emerald-100 ml-13">
+                      <Text className="text-gray-700 text-sm font-semibold mb-3">
                         Cards in this set:
                       </Text>
                       {flashcards.map((card) => (
                         <View
                           key={card.id}
-                          className="bg-gray-50 rounded-lg p-3 mb-2"
+                          className="bg-emerald-50 rounded-2xl p-3 mb-2"
                         >
                           <View className="flex-row justify-between items-start">
                             <View className="flex-1">
-                              <Text className="font-medium text-gray-900 text-sm">
+                              <Text className="font-semibold text-gray-900 text-sm">
                                 Q: {card.question}
                               </Text>
                               <Text className="text-gray-600 text-xs mt-1">
@@ -559,21 +586,21 @@ export default function TeacherFlashcards() {
                                 onPress={() =>
                                   openEditFlashcardModal(set.id, card)
                                 }
-                                className="ml-2"
+                                className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center"
                               >
                                 <Ionicons
                                   name="create"
-                                  size={16}
-                                  color="#3B82F6"
+                                  size={14}
+                                  color="#10B981"
                                 />
                               </TouchableOpacity>
                               <TouchableOpacity
                                 onPress={() => deleteFlashcard(set.id, card.id)}
-                                className="ml-1"
+                                className="w-7 h-7 bg-red-50 rounded-full items-center justify-center ml-1"
                               >
                                 <Ionicons
                                   name="close-circle"
-                                  size={16}
+                                  size={14}
                                   color="#EF4444"
                                 />
                               </TouchableOpacity>
@@ -587,20 +614,50 @@ export default function TeacherFlashcards() {
               );
             })
           ) : (
-            <View className="bg-gray-50 rounded-xl p-8 items-center">
-              <Ionicons name="copy-outline" size={64} color="#9CA3AF" />
-              <Text className="text-gray-500 text-lg font-semibold mt-4 text-center">
+            <View
+              className="bg-white rounded-3xl p-8 items-center relative overflow-hidden"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                elevation: 5,
+              }}
+            >
+              <View className="absolute -top-8 -right-8 w-20 h-20 bg-emerald-50 rounded-full" />
+              <View className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-50 rounded-full" />
+
+              <View
+                className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-4"
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="copy-outline" size={36} color="#10B981" />
+              </View>
+              <Text className="text-gray-800 text-lg font-bold text-center">
                 No Flashcard Sets Yet
               </Text>
-              <Text className="text-gray-400 text-center mt-2">
+              <Text className="text-gray-500 text-center mt-2 text-sm">
                 Create your first flashcard set for your students!
               </Text>
               <TouchableOpacity
-                className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center mt-4"
+                className="bg-emerald-500 rounded-2xl py-4 px-8 flex-row items-center mt-4"
                 onPress={() => setShowAddSetModal(true)}
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  elevation: 8,
+                }}
               >
-                <Ionicons name="add-circle-outline" size={18} color="white" />
-                <Text className="text-white font-semibold ml-2">
+                <Ionicons name="add-circle-outline" size={20} color="white" />
+                <Text className="text-white font-bold ml-2">
                   Create First Set
                 </Text>
               </TouchableOpacity>
@@ -612,19 +669,39 @@ export default function TeacherFlashcards() {
       {/* Add Set Modal */}
       <Modal visible={showAddSetModal} animationType="slide" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+          <View
+            className="bg-white rounded-3xl p-6 mx-4 w-11/12 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-8 -left-8 w-20 h-20 bg-emerald-50 rounded-full opacity-50" />
+
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-900">
-                Create Flashcard Set
-              </Text>
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={22}
+                    color="#10B981"
+                  />
+                </View>
+                <Text className="text-xl font-bold text-gray-900">
+                  Create Flashcard Set
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setShowAddSetModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            {/* Set Title Input */}
-            <View className="mb-3">
-              <Text className="text-gray-700 font-medium mb-1">
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Set Title <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
@@ -633,15 +710,14 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setNewSet((prev) => ({ ...prev, title: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
 
-            {/* Set Description Input */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-medium mb-1">
-                Description <Text className="text-red-500">*</Text>
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                Description
               </Text>
               <TextInput
                 placeholder="Enter description"
@@ -649,7 +725,7 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setNewSet((prev) => ({ ...prev, description: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
@@ -657,23 +733,32 @@ export default function TeacherFlashcards() {
               />
             </View>
 
-            <View className="flex-row justify-between gap-3">
+            <View className="flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                 onPress={() => setShowAddSetModal(false)}
               >
-                <Text className="text-gray-700 font-medium text-center">
+                <Text className="text-gray-700 font-semibold text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-3 px-4 rounded-xl ${
-                  isAddSetValid() ? "bg-blue-500" : "bg-gray-300"
-                }`}
+                className={`flex-1 py-4 px-4 rounded-2xl ${isAddSetValid() ? "bg-emerald-500" : "bg-gray-300"}`}
                 onPress={handleAddSet}
                 disabled={!isAddSetValid()}
+                style={
+                  isAddSetValid()
+                    ? {
+                        shadowColor: "#10B981",
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 16,
+                        elevation: 8,
+                      }
+                    : {}
+                }
               >
-                <Text className="text-white font-medium text-center">
+                <Text className="text-white font-bold text-center">
                   Create Set
                 </Text>
               </TouchableOpacity>
@@ -689,19 +774,35 @@ export default function TeacherFlashcards() {
         transparent={true}
       >
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+          <View
+            className="bg-white rounded-3xl p-6 mx-4 w-11/12 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-8 -left-8 w-20 h-20 bg-emerald-50 rounded-full opacity-50" />
+
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-900">
-                Edit Flashcard Set
-              </Text>
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="create-outline" size={22} color="#10B981" />
+                </View>
+                <Text className="text-xl font-bold text-gray-900">
+                  Edit Flashcard Set
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setShowEditSetModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            {/* Set Title Input */}
-            <View className="mb-3">
-              <Text className="text-gray-700 font-medium mb-1">
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Set Title <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
@@ -710,14 +811,13 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setEditSet((prev) => ({ ...prev, title: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
 
-            {/* Set Description Input */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-medium mb-1">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Description (Optional)
               </Text>
               <TextInput
@@ -726,7 +826,7 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setEditSet((prev) => ({ ...prev, description: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
@@ -734,23 +834,32 @@ export default function TeacherFlashcards() {
               />
             </View>
 
-            <View className="flex-row justify-between gap-3">
+            <View className="flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                 onPress={() => setShowEditSetModal(false)}
               >
-                <Text className="text-gray-700 font-medium text-center">
+                <Text className="text-gray-700 font-semibold text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-3 px-4 rounded-xl ${
-                  isEditSetValid() ? "bg-blue-500" : "bg-gray-300"
-                }`}
+                className={`flex-1 py-4 px-4 rounded-2xl ${isEditSetValid() ? "bg-emerald-500" : "bg-gray-300"}`}
                 onPress={handleUpdateSet}
                 disabled={!isEditSetValid()}
+                style={
+                  isEditSetValid()
+                    ? {
+                        shadowColor: "#10B981",
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 16,
+                        elevation: 8,
+                      }
+                    : {}
+                }
               >
-                <Text className="text-white font-medium text-center">
+                <Text className="text-white font-bold text-center">
                   Update Set
                 </Text>
               </TouchableOpacity>
@@ -766,19 +875,45 @@ export default function TeacherFlashcards() {
         transparent={true}
       >
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+          <View
+            className="bg-white rounded-3xl p-6 mx-4 w-11/12 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-8 -left-8 w-20 h-20 bg-emerald-50 rounded-full opacity-50" />
+
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-900">
-                Add Flashcard to {currentSet?.title}
-              </Text>
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={22}
+                    color="#10B981"
+                  />
+                </View>
+                <Text className="text-xl font-bold text-gray-900">
+                  Add Flashcard
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setShowAddCardModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            {/* Question Input */}
-            <View className="mb-3">
-              <Text className="text-gray-700 font-medium mb-1">
+            {currentSet && (
+              <Text className="text-emerald-600 font-semibold mb-4">
+                To: {currentSet.title}
+              </Text>
+            )}
+
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Question <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
@@ -787,7 +922,7 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setNewFlashcard((prev) => ({ ...prev, question: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
@@ -795,9 +930,8 @@ export default function TeacherFlashcards() {
               />
             </View>
 
-            {/* Answer Input */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-medium mb-1">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Answer <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
@@ -806,7 +940,7 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setNewFlashcard((prev) => ({ ...prev, answer: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
@@ -814,23 +948,32 @@ export default function TeacherFlashcards() {
               />
             </View>
 
-            <View className="flex-row justify-between gap-3">
+            <View className="flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                 onPress={() => setShowAddCardModal(false)}
               >
-                <Text className="text-gray-700 font-medium text-center">
+                <Text className="text-gray-700 font-semibold text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-3 px-4 rounded-xl ${
-                  isAddFlashcardValid() ? "bg-blue-500" : "bg-gray-300"
-                }`}
+                className={`flex-1 py-4 px-4 rounded-2xl ${isAddFlashcardValid() ? "bg-emerald-500" : "bg-gray-300"}`}
                 onPress={handleAddFlashcard}
                 disabled={!isAddFlashcardValid()}
+                style={
+                  isAddFlashcardValid()
+                    ? {
+                        shadowColor: "#10B981",
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 16,
+                        elevation: 8,
+                      }
+                    : {}
+                }
               >
-                <Text className="text-white font-medium text-center">
+                <Text className="text-white font-bold text-center">
                   Add Card
                 </Text>
               </TouchableOpacity>
@@ -846,19 +989,35 @@ export default function TeacherFlashcards() {
         transparent={true}
       >
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+          <View
+            className="bg-white rounded-3xl p-6 mx-4 w-11/12 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-8 -left-8 w-20 h-20 bg-emerald-50 rounded-full opacity-50" />
+
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-900">
-                Edit Flashcard
-              </Text>
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="create-outline" size={22} color="#10B981" />
+                </View>
+                <Text className="text-xl font-bold text-gray-900">
+                  Edit Flashcard
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setShowEditCardModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            {/* Question Input */}
-            <View className="mb-3">
-              <Text className="text-gray-700 font-medium mb-1">
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Question <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
@@ -867,7 +1026,7 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setEditCardData((prev) => ({ ...prev, question: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
@@ -875,9 +1034,8 @@ export default function TeacherFlashcards() {
               />
             </View>
 
-            {/* Answer Input */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-medium mb-1">
+              <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Answer <Text className="text-red-500">*</Text>
               </Text>
               <TextInput
@@ -886,7 +1044,7 @@ export default function TeacherFlashcards() {
                 onChangeText={(text) =>
                   setEditCardData((prev) => ({ ...prev, answer: text }))
                 }
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                 placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
@@ -894,23 +1052,32 @@ export default function TeacherFlashcards() {
               />
             </View>
 
-            <View className="flex-row justify-between gap-3">
+            <View className="flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                 onPress={() => setShowEditCardModal(false)}
               >
-                <Text className="text-gray-700 font-medium text-center">
+                <Text className="text-gray-700 font-semibold text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 py-3 px-4 rounded-xl ${
-                  isEditFlashcardValid() ? "bg-blue-500" : "bg-gray-300"
-                }`}
+                className={`flex-1 py-4 px-4 rounded-2xl ${isEditFlashcardValid() ? "bg-emerald-500" : "bg-gray-300"}`}
                 onPress={handleEditFlashcard}
                 disabled={!isEditFlashcardValid()}
+                style={
+                  isEditFlashcardValid()
+                    ? {
+                        shadowColor: "#10B981",
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 16,
+                        elevation: 8,
+                      }
+                    : {}
+                }
               >
-                <Text className="text-white font-medium text-center">
+                <Text className="text-white font-bold text-center">
                   Update Card
                 </Text>
               </TouchableOpacity>
@@ -922,48 +1089,69 @@ export default function TeacherFlashcards() {
       {/* Study Modal */}
       <Modal visible={showStudyModal} animationType="fade" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black/70">
-          <View className="bg-white rounded-2xl p-6 mx-4 w-11/12">
+          <View
+            className="bg-white rounded-3xl p-8 mx-4 w-11/12 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 20 },
+              shadowOpacity: 0.2,
+              shadowRadius: 40,
+              elevation: 15,
+            }}
+          >
+            <View className="absolute -top-8 -right-8 w-20 h-20 bg-emerald-100 rounded-full opacity-50" />
+            <View className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-50 rounded-full opacity-50" />
+
             {currentSet && currentCard && (
               <>
-                <Text className="text-center text-gray-500 mb-2">
-                  {currentSet.title} • Card {currentCardIndex + 1} of{" "}
-                  {getFlashcards(currentSet).length}
-                </Text>
+                <View className="bg-emerald-100 rounded-full px-4 py-1.5 mb-4 self-center">
+                  <Text className="text-emerald-600 text-sm font-semibold">
+                    {currentSet.title} • Card {currentCardIndex + 1} of{" "}
+                    {getFlashcards(currentSet).length}
+                  </Text>
+                </View>
 
-                <View className="bg-blue-50 rounded-xl p-6 mb-6 min-h-[200px] justify-center">
-                  <Text className="text-xl font-semibold text-gray-900 text-center mb-4">
+                <View className="bg-emerald-50 rounded-2xl p-8 mb-6 min-h-[200px] justify-center">
+                  <Text className="text-lg font-bold text-emerald-600 text-center mb-3">
                     {showAnswer ? "Answer:" : "Question:"}
                   </Text>
-                  <Text className="text-lg text-gray-700 text-center">
+                  <Text className="text-xl text-gray-800 text-center font-medium">
                     {showAnswer ? currentCard.answer : currentCard.question}
                   </Text>
                 </View>
 
-                <View className="flex-row justify-between gap-3 mb-4">
+                <View className="flex-row gap-3 mb-4">
                   <TouchableOpacity
-                    className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                    className="flex-1 py-4 px-4 bg-emerald-100 rounded-2xl"
                     onPress={() => setShowAnswer(!showAnswer)}
                   >
-                    <Text className="text-gray-700 font-medium text-center">
+                    <Text className="text-emerald-700 font-bold text-center">
                       {showAnswer ? "Show Question" : "Show Answer"}
                     </Text>
                   </TouchableOpacity>
                 </View>
 
-                <View className="flex-row justify-between gap-3">
+                <View className="flex-row gap-3">
                   <TouchableOpacity
-                    className="flex-1 py-3 px-4 bg-red-500 rounded-xl"
+                    className="flex-1 py-4 px-4 bg-red-50 rounded-2xl"
                     onPress={() => setShowStudyModal(false)}
                   >
-                    <Text className="text-white font-medium text-center">
+                    <Text className="text-red-600 font-bold text-center">
                       Stop
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="flex-1 py-3 px-4 bg-green-500 rounded-xl"
+                    className="flex-1 py-4 px-4 bg-emerald-500 rounded-2xl"
                     onPress={nextCard}
+                    style={{
+                      shadowColor: "#10B981",
+                      shadowOffset: { width: 0, height: 8 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 16,
+                      elevation: 8,
+                    }}
                   >
-                    <Text className="text-white font-medium text-center">
+                    <Text className="text-white font-bold text-center">
                       {currentCardIndex === getFlashcards(currentSet).length - 1
                         ? "Finish"
                         : "Next"}

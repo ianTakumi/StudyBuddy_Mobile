@@ -1,25 +1,25 @@
-import React from "react";
+import { updateProfile } from "@/redux/slices/authSlice";
+import client from "@/utils/axiosInstance";
+import {
+  formatPhoneNumber,
+  validateEmail,
+  validatePhone,
+} from "@/utils/helpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
-import { useForm, Controller } from "react-hook-form";
-import {
-  validatePhone,
-  validateEmail,
-  formatPhoneNumber,
-} from "@/utils/helpers";
-import client from "@/utils/axiosInstance";
-import { updateProfile } from "@/redux/slices/authSlice";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function UpdateProfile() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function UpdateProfile() {
     // Validate phone number format
     if (!validatePhone(data.phone)) {
       alert(
-        "Please enter a valid 11-digit phone number starting with 09 (e.g., 09613886156)."
+        "Please enter a valid 11-digit phone number starting with 09 (e.g., 09613886156).",
       );
       return;
     }
@@ -81,22 +81,36 @@ export default function UpdateProfile() {
   const isPhoneValid = validatePhone(watch("phone"));
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-3 border-b border-blue-100">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="p-2 bg-blue-100 rounded-lg"
-        >
-          <Ionicons name="arrow-back" size={24} color="#2563eb" />
-        </TouchableOpacity>
+    <SafeAreaView className="flex-1 bg-emerald-50">
+      {/* Header - Pear Deck Style */}
+      <View
+        className="w-full pt-4 pb-6 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 30,
+          borderBottomRightRadius: 30,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.3,
+          shadowRadius: 16,
+          elevation: 8,
+        }}
+      >
+        {/* Decorative Circles */}
+        <View className="absolute top-2 right-8 w-12 h-12 bg-emerald-400/30 rounded-full" />
+        <View className="absolute bottom-2 left-10 w-16 h-16 bg-emerald-400/20 rounded-full" />
 
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-lg font-semibold text-blue-800">
-            Update Profile
-          </Text>
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-white/20 rounded-full items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={22} color="white" />
+          </TouchableOpacity>
+
+          <Text className="text-xl font-bold text-white">Update Profile</Text>
+
+          <View className="w-10" />
         </View>
-
-        <View className="w-10" />
       </View>
 
       <KeyboardAvoidingView
@@ -108,16 +122,57 @@ export default function UpdateProfile() {
           showsVerticalScrollIndicator={false}
         >
           <View className="py-6">
+            {/* Profile Avatar Section */}
+            <View className="items-center mb-6">
+              <View className="relative">
+                <View
+                  className="w-24 h-24 bg-emerald-100 rounded-full items-center justify-center"
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 12,
+                    elevation: 5,
+                  }}
+                >
+                  <Text className="text-3xl font-bold text-emerald-600">
+                    {watch("first_name")?.[0] || "?"}
+                    {watch("last_name")?.[0] || "?"}
+                  </Text>
+                </View>
+                <View className="absolute -top-1 -right-1 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+                <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+              </View>
+            </View>
+
             {/* Personal Information Section */}
-            <View className="bg-white rounded-2xl p-4 mb-6 border border-gray-200">
-              <Text className="text-lg font-semibold text-gray-800 mb-4">
-                Personal Information
-              </Text>
+            <View
+              className="bg-white rounded-3xl p-6 mb-6 relative overflow-hidden"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                elevation: 5,
+              }}
+            >
+              {/* Decorative circles */}
+              <View className="absolute -top-6 -right-6 w-20 h-20 bg-emerald-50 rounded-full" />
+              <View className="absolute -bottom-4 -left-4 w-16 h-16 bg-emerald-50 rounded-full opacity-70" />
+
+              <View className="flex-row items-center mb-6">
+                <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="person-outline" size={20} color="#10B981" />
+                </View>
+                <Text className="text-lg font-bold text-gray-900">
+                  Personal Information
+                </Text>
+              </View>
 
               {/* First Name */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">
-                  First Name *
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  First Name <Text className="text-red-500">*</Text>
                 </Text>
                 <Controller
                   control={control}
@@ -126,10 +181,13 @@ export default function UpdateProfile() {
                   }}
                   render={({ field: { onChange, onBlur, value } }) => (
                     <TextInput
-                      className={`border rounded-lg px-4 py-3 ${
-                        errors.first_name ? "border-red-500" : "border-gray-300"
+                      className={`border-2 rounded-2xl px-5 py-4 text-gray-900 ${
+                        errors.first_name
+                          ? "border-red-300 bg-red-50"
+                          : "border-emerald-200 bg-emerald-50"
                       }`}
                       placeholder="Enter first name"
+                      placeholderTextColor="#9CA3AF"
                       onBlur={onBlur}
                       onChangeText={onChange}
                       value={value}
@@ -138,16 +196,16 @@ export default function UpdateProfile() {
                   name="first_name"
                 />
                 {errors.first_name && (
-                  <Text className="text-red-500 text-xs mt-1">
+                  <Text className="text-red-500 text-xs mt-1.5 ml-2">
                     {errors.first_name.message}
                   </Text>
                 )}
               </View>
 
               {/* Last Name */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">
-                  Last Name *
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Last Name <Text className="text-red-500">*</Text>
                 </Text>
                 <Controller
                   control={control}
@@ -156,10 +214,13 @@ export default function UpdateProfile() {
                   }}
                   render={({ field: { onChange, onBlur, value } }) => (
                     <TextInput
-                      className={`border rounded-lg px-4 py-3 ${
-                        errors.last_name ? "border-red-500" : "border-gray-300"
+                      className={`border-2 rounded-2xl px-5 py-4 text-gray-900 ${
+                        errors.last_name
+                          ? "border-red-300 bg-red-50"
+                          : "border-emerald-200 bg-emerald-50"
                       }`}
                       placeholder="Enter last name"
+                      placeholderTextColor="#9CA3AF"
                       onBlur={onBlur}
                       onChangeText={onChange}
                       value={value}
@@ -168,16 +229,16 @@ export default function UpdateProfile() {
                   name="last_name"
                 />
                 {errors.last_name && (
-                  <Text className="text-red-500 text-xs mt-1">
+                  <Text className="text-red-500 text-xs mt-1.5 ml-2">
                     {errors.last_name.message}
                   </Text>
                 )}
               </View>
 
               {/* Email */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">
-                  Email *
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Email <Text className="text-red-500">*</Text>
                 </Text>
                 <Controller
                   control={control}
@@ -190,10 +251,13 @@ export default function UpdateProfile() {
                   }}
                   render={({ field: { onChange, onBlur, value } }) => (
                     <TextInput
-                      className={`border rounded-lg px-4 py-3 ${
-                        errors.email ? "border-red-500" : "border-gray-300"
+                      className={`border-2 rounded-2xl px-5 py-4 text-gray-900 ${
+                        errors.email
+                          ? "border-red-300 bg-red-50"
+                          : "border-emerald-200 bg-emerald-50"
                       }`}
                       placeholder="Enter email"
+                      placeholderTextColor="#9CA3AF"
                       onBlur={onBlur}
                       onChangeText={onChange}
                       value={value}
@@ -204,16 +268,16 @@ export default function UpdateProfile() {
                   name="email"
                 />
                 {errors.email && (
-                  <Text className="text-red-500 text-xs mt-1">
+                  <Text className="text-red-500 text-xs mt-1.5 ml-2">
                     {errors.email.message}
                   </Text>
                 )}
               </View>
 
               {/* Phone */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">
-                  Phone *
+              <View className="mb-2">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Phone <Text className="text-red-500">*</Text>
                 </Text>
                 <Controller
                   control={control}
@@ -225,45 +289,76 @@ export default function UpdateProfile() {
                     },
                   }}
                   render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      className={`border rounded-lg px-4 py-3 ${
-                        errors.phone
-                          ? "border-red-500"
-                          : value && isPhoneValid
-                            ? "border-blue-500"
-                            : "border-gray-300"
-                      }`}
-                      placeholder="09613886156"
-                      onBlur={onBlur}
-                      onChangeText={(text) => {
-                        const formatted = formatPhoneNumber(text);
-                        onChange(formatted);
-                      }}
-                      value={value}
-                      keyboardType="phone-pad"
-                      maxLength={11}
-                    />
+                    <View>
+                      <TextInput
+                        className={`border-2 rounded-2xl px-5 py-4 text-gray-900 ${
+                          errors.phone
+                            ? "border-red-300 bg-red-50"
+                            : value && isPhoneValid
+                              ? "border-emerald-500 bg-emerald-50"
+                              : "border-emerald-200 bg-emerald-50"
+                        }`}
+                        placeholder="09613886156"
+                        placeholderTextColor="#9CA3AF"
+                        onBlur={onBlur}
+                        onChangeText={(text) => {
+                          const formatted = formatPhoneNumber(text);
+                          onChange(formatted);
+                        }}
+                        value={value}
+                        keyboardType="phone-pad"
+                        maxLength={11}
+                      />
+                      {value && isPhoneValid && (
+                        <View className="absolute right-4 top-4">
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="#10B981"
+                          />
+                        </View>
+                      )}
+                    </View>
                   )}
                   name="phone"
                 />
                 {errors.phone && (
-                  <Text className="text-red-500 text-xs mt-1">
+                  <Text className="text-red-500 text-xs mt-1.5 ml-2">
                     {errors.phone.message}
                   </Text>
                 )}
-                <Text className="text-xs text-gray-500 mt-1">
-                  Format: 09XXXXXXXXX (11 digits)
-                </Text>
+                <View className="flex-row items-center mt-2 ml-2">
+                  <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1.5">
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={10}
+                      color="#10B981"
+                    />
+                  </View>
+                  <Text className="text-xs text-gray-500">
+                    Format: 09XXXXXXXXX (11 digits)
+                  </Text>
+                </View>
               </View>
             </View>
 
             {/* Submit Button */}
             <TouchableOpacity
               onPress={handleSubmit(onSubmit)}
-              className="bg-blue-600 rounded-lg py-4 flex-row items-center justify-center shadow-lg active:bg-blue-700"
+              className="bg-emerald-500 rounded-2xl py-4 flex-row items-center justify-center mb-6"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.3,
+                shadowRadius: 16,
+                elevation: 8,
+              }}
+              activeOpacity={0.8}
             >
-              <Ionicons name="save-outline" size={20} color="white" />
-              <Text className="text-white text-center font-semibold text-lg ml-2">
+              <View className="w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-3">
+                <Ionicons name="save-outline" size={18} color="white" />
+              </View>
+              <Text className="text-white text-center font-bold text-lg">
                 Update Profile
               </Text>
             </TouchableOpacity>

@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback } from "react";
+import client from "@/utils/axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   Alert,
   RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { ProgressChart } from "react-native-chart-kit";
-import client from "@/utils/axiosInstance";
 import { useSelector } from "react-redux";
-import { useRouter } from "expo-router";
 
 interface StudySession {
   id: string;
@@ -262,10 +261,16 @@ export default function Progress() {
     totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-emerald-50">
       {/* Header */}
-      <View className="pt-12 pb-4 px-6 bg-white">
-        <Text className="text-2xl font-bold text-gray-900">Study Progress</Text>
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{ borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+        <Text className="text-3xl font-bold text-white">Study Progress</Text>
       </View>
 
       <ScrollView
@@ -274,27 +279,37 @@ export default function Progress() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#2563eb"]} // Android
-            tintColor="#2563eb" // iOS
-            title="Pull to refresh..." // iOS
-            titleColor="#6b7280" // iOS
+            colors={["#10B981"]}
+            tintColor="#10B981"
+            title="Pull to refresh..."
+            titleColor="#6b7280"
           />
         }
       >
         {/* Weekly Study Hours */}
-        <View className="mx-4 mb-6">
-          <View className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">
+        <View className="mx-4 mt-6 mb-6">
+          <View
+            className="bg-white rounded-3xl p-6"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-6 -right-6 w-20 h-20 bg-emerald-50 rounded-full" />
+            <Text className="text-lg font-bold text-gray-900 mb-4">
               This Week's Study Hours
             </Text>
             <View className="flex-row justify-between items-end h-32">
               {weeklyStats.map((day, index) => (
                 <View key={index} className="items-center flex-1">
                   <View
-                    className={`w-8 rounded-t-lg ${
-                      day.completed ? "bg-blue-500" : "bg-gray-200"
+                    className={`w-8 rounded-t-2xl ${
+                      day.completed ? "bg-emerald-500" : "bg-emerald-100"
                     }`}
-                    style={{ height: Math.min(day.hours * 8, 64) }} // Max height 64 (8 hours)
+                    style={{ height: Math.min(day.hours * 8, 64) }}
                   />
                   <Text className="text-gray-600 text-xs mt-2">{day.day}</Text>
                   <Text className="text-gray-900 text-xs font-medium">
@@ -313,41 +328,51 @@ export default function Progress() {
 
         {/* Study Stats */}
         <View className="mx-4 mb-6">
-          <View className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">
+          <View
+            className="bg-white rounded-3xl p-6"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+            <Text className="text-lg font-bold text-gray-900 mb-4">
               Study Statistics
             </Text>
             <View className="flex-row justify-between mb-4">
               <View className="items-center">
-                <Text className="text-2xl font-bold text-blue-500">
+                <Text className="text-2xl font-bold text-emerald-500">
                   {totalSessions}
                 </Text>
                 <Text className="text-gray-600 text-sm">Sessions</Text>
               </View>
               <View className="items-center">
-                <Text className="text-2xl font-bold text-green-500">
+                <Text className="text-2xl font-bold text-emerald-600">
                   {totalHours.toFixed(1)}
                 </Text>
                 <Text className="text-gray-600 text-sm">Total Hours</Text>
               </View>
               <View className="items-center">
-                <Text className="text-2xl font-bold text-purple-500">
+                <Text className="text-2xl font-bold text-emerald-700">
                   {Object.keys(subjectStats).length}
                 </Text>
                 <Text className="text-gray-600 text-sm">Subjects</Text>
               </View>
               <View className="items-center">
-                <Text className="text-2xl font-bold text-orange-500">
+                <Text className="text-2xl font-bold text-emerald-400">
                   {completionRate.toFixed(0)}%
                 </Text>
                 <Text className="text-gray-600 text-sm">Completion</Text>
               </View>
             </View>
             {topSubject !== "None" && (
-              <View className="mt-2 pt-3 border-t border-gray-100">
+              <View className="mt-2 pt-3 border-t border-emerald-100">
                 <Text className="text-gray-600 text-sm text-center">
                   Most studied:{" "}
-                  <Text className="font-semibold text-blue-600">
+                  <Text className="font-semibold text-emerald-600">
                     {topSubject}
                   </Text>
                 </Text>
@@ -356,20 +381,29 @@ export default function Progress() {
           </View>
         </View>
 
-        {/* Study Goals - Integrated from CRUD */}
-        {/* Study Goals - Integrated from CRUD */}
+        {/* Study Goals */}
         <View className="mx-4 mb-8">
-          <View className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+          <View
+            className="bg-white rounded-3xl p-6"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-8 -right-8 w-24 h-24 bg-emerald-50 rounded-full" />
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-lg font-semibold text-gray-900">
+              <Text className="text-lg font-bold text-gray-900">
                 Study Goals
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/students/StudyGoals")}
-                className="bg-blue-100 px-3 py-1 rounded-lg flex-row items-center"
+                className="bg-emerald-500 px-3 py-1 rounded-full flex-row items-center"
               >
-                <Ionicons name="add-circle-outline" size={16} color="#2563eb" />
-                <Text className="text-blue-600 text-sm ml-1">Manage</Text>
+                <Ionicons name="add-circle-outline" size={16} color="white" />
+                <Text className="text-white text-sm ml-1">Manage</Text>
               </TouchableOpacity>
             </View>
 
@@ -382,7 +416,9 @@ export default function Progress() {
                 onPress={() => router.push("/students/StudyGoals")}
                 className="items-center py-8"
               >
-                <Ionicons name="flag-outline" size={48} color="#9CA3AF" />
+                <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center mb-3">
+                  <Ionicons name="flag-outline" size={32} color="#10B981" />
+                </View>
                 <Text className="text-gray-500 text-center mt-3">
                   No goals set yet
                 </Text>
@@ -392,15 +428,12 @@ export default function Progress() {
               </TouchableOpacity>
             ) : (
               <>
-                {/* REPLACE FROM HERE */}
-                {/* Show all goals with completed ones at the bottom */}
                 {[...goals]
                   .sort((a, b) => {
-                    // Sort: incomplete first, then completed
                     if (a.completed === b.completed) return 0;
                     return a.completed ? 1 : -1;
                   })
-                  .slice(0, 5) // Show up to 5 goals total
+                  .slice(0, 5)
                   .map((goal) => (
                     <TouchableOpacity
                       key={goal.id}
@@ -412,7 +445,7 @@ export default function Progress() {
                     >
                       <View
                         className={`w-12 h-12 rounded-full items-center justify-center mr-3 ${
-                          goal.completed ? "bg-green-100" : "bg-gray-100"
+                          goal.completed ? "bg-emerald-100" : "bg-gray-100"
                         }`}
                       >
                         <Ionicons
@@ -450,38 +483,35 @@ export default function Progress() {
                     </TouchableOpacity>
                   ))}
 
-                {/* Show more button if there are more than 5 goals */}
                 {goals.length > 5 && (
                   <TouchableOpacity
                     onPress={() => router.push("/students/StudyGoals")}
-                    className="flex-row items-center justify-center mt-3 py-2 border-t border-gray-100"
+                    className="flex-row items-center justify-center mt-3 py-2 border-t border-emerald-100"
                   >
-                    <Text className="text-blue-600 text-sm">
+                    <Text className="text-emerald-600 text-sm">
                       + {goals.length - 5} more goals
                     </Text>
                     <Ionicons
                       name="chevron-forward"
                       size={16}
-                      color="#2563eb"
+                      color="#10B981"
                     />
                   </TouchableOpacity>
                 )}
-                {/* REPLACE TO HERE */}
 
-                {/* Goal Progress Summary */}
                 {totalGoals > 0 && (
-                  <View className="mt-4 pt-4 border-t border-gray-100">
+                  <View className="mt-4 pt-4 border-t border-emerald-100">
                     <View className="flex-row justify-between items-center mb-2">
                       <Text className="text-sm text-gray-600">
                         Overall Progress
                       </Text>
-                      <Text className="text-sm font-semibold text-blue-600">
+                      <Text className="text-sm font-semibold text-emerald-600">
                         {completedGoals}/{totalGoals} Completed
                       </Text>
                     </View>
-                    <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <View className="h-2 bg-emerald-100 rounded-full overflow-hidden">
                       <View
-                        className="h-full bg-green-500 rounded-full"
+                        className="h-full bg-emerald-500 rounded-full"
                         style={{ width: `${goalCompletionRate}%` }}
                       />
                     </View>

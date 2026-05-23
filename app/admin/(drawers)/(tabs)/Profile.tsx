@@ -25,8 +25,10 @@ export default function AdminProfile() {
 
   const confirmLogout = () => {
     setShowLogoutModal(false);
-    dispatch(logout());
-    router.push("/LoginScreen");
+    router.replace("/LoginScreen");
+    setTimeout(() => {
+      dispatch(logout());
+    }, 200);
   };
 
   const cancelLogout = () => {
@@ -35,121 +37,116 @@ export default function AdminProfile() {
 
   const handleLogout = (): void => {
     ActionSheetHelper.showLogoutConfirmation(() => {
-      dispatch(logout());
-      router.push("/LoginScreen");
+      router.replace("/LoginScreen");
+      setTimeout(() => {
+        dispatch(logout());
+      }, 200);
     });
   };
 
   if (!user) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center">
-        <Text>Loading...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center">
+            <Ionicons name="person-outline" size={28} color="#10B981" />
+          </View>
+          <View className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-200 rounded-full opacity-50" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50 pt-5">
+    <View className="flex-1 bg-emerald-50 pt-5">
       {/* Header */}
       <View className="bg-white pt-12 pb-4 px-6">
         <Text className="text-2xl font-bold text-gray-900">Profile</Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {/* Profile Header */}
-        <View className="bg-[#4A90E2] mx-4 py-8 items-center border-b border-gray-200 rounded-xl">
-          <View className="bg-white w-20 h-20 rounded-full items-center justify-center mb-4">
-            <Ionicons name="person-outline" size={32} color="#4A90E2" />
+        <View
+          className="bg-emerald-500 mx-4 mt-6 py-8 items-center rounded-3xl relative overflow-hidden"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 20,
+            elevation: 8,
+          }}
+        >
+          <View className="absolute -top-10 -right-10 w-24 h-24 bg-white/10 rounded-full" />
+          <View className="absolute -bottom-8 -left-8 w-20 h-20 bg-white/10 rounded-full" />
+          <View className="absolute top-4 left-6 w-10 h-10 bg-white/10 rounded-full" />
+          <View className="absolute bottom-6 right-8 w-12 h-12 bg-white/10 rounded-full" />
+
+          <View
+            className="bg-white w-20 h-20 rounded-full items-center justify-center mb-4 z-10"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Ionicons name="person-outline" size={32} color="#10B981" />
           </View>
-          <Text className="text-xl font-bold text-white mb-1">
+          <Text className="text-xl font-bold text-white mb-1 z-10">
             {user.first_name + " " + user.last_name}
           </Text>
-          <Text className="text-gray-200 text-base capitalize">
+          <Text className="text-emerald-100 text-base capitalize z-10">
             {user.role?.replace("_", " ") || "Administrator"}
           </Text>
-          <Text className="text-gray-300 text-sm mt-1">{user.email}</Text>
+          <Text className="text-emerald-200 text-sm mt-1 z-10">
+            {user.email}
+          </Text>
         </View>
 
-        {/* Admin Statistics Section */}
-        {/* <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
-          <View className="px-6 py-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-900">
-              Admin Statistics
-            </Text>
-            <Text className="text-gray-500 text-sm mt-1">
-              Your platform management overview
-            </Text>
-          </View>
+        {/* Account Section */}
+        <View
+          className="bg-white mt-6 mx-4 rounded-3xl overflow-hidden relative"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
 
-          <View className="px-6 py-4">
-            <View className="flex-row flex-wrap justify-between">
-              <View className="w-[48%] items-center mb-4">
-                <View className="bg-blue-100 w-12 h-12 rounded-full items-center justify-center mb-2">
-                  <Ionicons name="flash-outline" size={24} color="#4A90E2" />
-                </View>
-                <Text className="text-2xl font-bold text-gray-900">245</Text>
-                <Text className="text-gray-500 text-sm text-center">
-                  Total Actions
-                </Text>
+          <View className="px-6 py-4 border-b border-emerald-100">
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                <Ionicons name="settings-outline" size={16} color="#10B981" />
               </View>
-
-              <View className="w-[48%] items-center mb-4">
-                <View className="bg-green-100 w-12 h-12 rounded-full items-center justify-center mb-2">
-                  <Ionicons name="people-outline" size={24} color="#34C759" />
-                </View>
-                <Text className="text-2xl font-bold text-gray-900">156</Text>
-                <Text className="text-gray-500 text-sm text-center">
-                  Users Managed
-                </Text>
-              </View>
-
-              <View className="w-[48%] items-center">
-                <View className="bg-orange-100 w-12 h-12 rounded-full items-center justify-center mb-2">
-                  <Ionicons
-                    name="document-text-outline"
-                    size={24}
-                    color="#FF9500"
-                  />
-                </View>
-                <Text className="text-2xl font-bold text-gray-900">89</Text>
-                <Text className="text-gray-500 text-sm text-center">
-                  Content Reviewed
-                </Text>
-              </View>
-
-              <View className="w-[48%] items-center">
-                <View className="bg-purple-100 w-12 h-12 rounded-full items-center justify-center mb-2">
-                  <Ionicons name="flag-outline" size={24} color="#AF52DE" />
-                </View>
-                <Text className="text-2xl font-bold text-gray-900">34</Text>
-                <Text className="text-gray-500 text-sm text-center">
-                  Reports Resolved
+              <View>
+                <Text className="text-lg font-bold text-gray-900">Account</Text>
+                <Text className="text-gray-500 text-sm mt-0.5">
+                  Manage your admin account
                 </Text>
               </View>
             </View>
           </View>
-        </View> */}
-
-        {/* Account Section */}
-        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
-          <View className="px-6 py-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-900">Account</Text>
-            <Text className="text-gray-500 text-sm mt-1">
-              Manage your admin account
-            </Text>
-          </View>
 
           {/* Personal Information */}
           <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            className="px-6 py-4 flex-row items-center justify-between border-b border-emerald-100"
             onPress={() => router.push("/admin/UpdateProfile")}
           >
             <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="person-outline" size={20} color="#4A90E2" />
+              <View className="bg-emerald-100 w-10 h-10 rounded-full items-center justify-center mr-3">
+                <Ionicons name="person-outline" size={20} color="#10B981" />
               </View>
               <View>
-                <Text className="text-gray-900 font-medium">
+                <Text className="text-gray-900 font-semibold">
                   Personal Information
                 </Text>
                 <Text className="text-gray-500 text-sm">
@@ -157,24 +154,26 @@ export default function AdminProfile() {
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <View className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center">
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
           </TouchableOpacity>
 
           {/* Change Password */}
           <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            className="px-6 py-4 flex-row items-center justify-between"
             onPress={() => router.push("/admin/ChangePassword")}
           >
             <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+              <View className="bg-emerald-100 w-10 h-10 rounded-full items-center justify-center mr-3">
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}
-                  color="#4A90E2"
+                  color="#10B981"
                 />
               </View>
               <View>
-                <Text className="text-gray-900 font-medium">
+                <Text className="text-gray-900 font-semibold">
                   Change Password
                 </Text>
                 <Text className="text-gray-500 text-sm">
@@ -182,53 +181,52 @@ export default function AdminProfile() {
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* System Settings */}
-          {/* <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between"
-            onPress={() => router.push("/admin/SystemSettings")}
-          >
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="settings-outline" size={20} color="#4A90E2" />
-              </View>
-              <View>
-                <Text className="text-gray-900 font-medium">
-                  System Settings
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Manage platform configuration
-                </Text>
-              </View>
+            <View className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center">
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity> */}
+          </TouchableOpacity>
         </View>
 
         {/* Admin Tools Section */}
-        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
-          <View className="px-6 py-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-900">
-              Admin Tools
-            </Text>
-            <Text className="text-gray-500 text-sm mt-1">
-              Platform management utilities
-            </Text>
+        <View
+          className="bg-white mt-6 mx-4 rounded-3xl overflow-hidden relative"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
+          <View className="px-6 py-4 border-b border-emerald-100">
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                <Ionicons name="construct-outline" size={16} color="#10B981" />
+              </View>
+              <View>
+                <Text className="text-lg font-bold text-gray-900">
+                  Admin Tools
+                </Text>
+                <Text className="text-gray-500 text-sm mt-0.5">
+                  Platform management utilities
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* User Management */}
           <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            className="px-6 py-4 flex-row items-center justify-between border-b border-emerald-100"
             onPress={() => router.push("/admin/(drawers)/(tabs)/Users")}
           >
             <View className="flex-row items-center">
-              <View className="bg-green-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                <Ionicons name="people-outline" size={20} color="#34C759" />
+              <View className="bg-emerald-100 w-10 h-10 rounded-full items-center justify-center mr-3">
+                <Ionicons name="people-outline" size={20} color="#10B981" />
               </View>
               <View>
-                <Text className="text-gray-900 font-medium">
+                <Text className="text-gray-900 font-semibold">
                   User Management
                 </Text>
                 <Text className="text-gray-500 text-sm">
@@ -236,24 +234,26 @@ export default function AdminProfile() {
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <View className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center">
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
           </TouchableOpacity>
 
           {/* Contact Inquiries */}
           <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            className="px-6 py-4 flex-row items-center justify-between"
             onPress={() => router.push("/admin/(drawers)/(tabs)/Contacts")}
           >
             <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+              <View className="bg-emerald-100 w-10 h-10 rounded-full items-center justify-center mr-3">
                 <Ionicons
                   name="chatbubbles-outline"
                   size={20}
-                  color="#3B82F6"
+                  color="#10B981"
                 />
               </View>
               <View>
-                <Text className="text-gray-900 font-medium">
+                <Text className="text-gray-900 font-semibold">
                   Contact Inquiries
                 </Text>
                 <Text className="text-gray-500 text-sm">
@@ -261,32 +261,54 @@ export default function AdminProfile() {
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <View className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center">
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* Support Section */}
-        <View className="bg-white mt-6 mx-4 rounded-2xl overflow-hidden border border-gray-200">
-          <View className="px-6 py-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-900">Support</Text>
+        <View
+          className="bg-white mt-6 mx-4 rounded-3xl overflow-hidden relative"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
+          <View className="px-6 py-4 border-b border-emerald-100">
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                <Ionicons name="headset-outline" size={16} color="#10B981" />
+              </View>
+              <Text className="text-lg font-bold text-gray-900">Support</Text>
+            </View>
           </View>
 
           {/* Help & Support */}
           <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-b border-gray-200"
+            className="px-6 py-4 flex-row items-center justify-between border-b border-emerald-100"
             onPress={() => router.push("/admin/Contact")}
           >
             <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+              <View className="bg-emerald-100 w-10 h-10 rounded-full items-center justify-center mr-3">
                 <Ionicons
                   name="help-circle-outline"
                   size={20}
-                  color="#4A90E2"
+                  color="#10B981"
                 />
               </View>
-              <Text className="text-gray-900 font-medium">Help & Support</Text>
+              <Text className="text-gray-900 font-semibold">
+                Help & Support
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <View className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center">
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
           </TouchableOpacity>
 
           {/* About PTCIANS */}
@@ -295,36 +317,49 @@ export default function AdminProfile() {
             onPress={() => router.push("/admin/AboutUs")}
           >
             <View className="flex-row items-center">
-              <View className="bg-blue-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+              <View className="bg-emerald-100 w-10 h-10 rounded-full items-center justify-center mr-3">
                 <Ionicons
                   name="information-circle-outline"
                   size={20}
-                  color="#4A90E2"
+                  color="#10B981"
                 />
               </View>
-              <Text className="text-gray-900 font-medium">About PTCIANS</Text>
+              <Text className="text-gray-900 font-semibold">About PTCIANS</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <View className="w-7 h-7 bg-emerald-100 rounded-full items-center justify-center">
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* Log Out */}
         <TouchableOpacity
-          className="bg-white mt-6 mx-4 rounded-2xl px-6 py-4 flex-row items-center justify-between border border-gray-200 mb-8"
+          className="bg-white mt-6 mx-4 rounded-3xl px-6 py-4 flex-row items-center justify-between relative overflow-hidden"
           onPress={handleLogout}
+          style={{
+            shadowColor: "#EF4444",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
         >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-red-50 rounded-full" />
+
           <View className="flex-row items-center">
-            <View className="bg-red-100 w-10 h-10 rounded-lg items-center justify-center mr-3">
+            <View className="bg-red-100 w-10 h-10 rounded-full items-center justify-center mr-3">
               <Ionicons name="log-out-outline" size={20} color="#EF4444" />
             </View>
             <View>
-              <Text className="text-red-600 font-medium">Log out</Text>
+              <Text className="text-red-600 font-semibold">Log out</Text>
               <Text className="text-gray-500 text-sm">
                 Sign out of your admin account
               </Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          <View className="w-7 h-7 bg-red-100 rounded-full items-center justify-center">
+            <Ionicons name="chevron-forward" size={14} color="#EF4444" />
+          </View>
         </TouchableOpacity>
       </ScrollView>
 
@@ -338,27 +373,59 @@ export default function AdminProfile() {
         <TouchableWithoutFeedback onPress={cancelLogout}>
           <View className="flex-1 justify-center items-center bg-black/50">
             <TouchableWithoutFeedback>
-              <View className="bg-white rounded-2xl p-6 mx-4 w-80">
+              <View
+                className="bg-white rounded-3xl p-8 mx-4 w-80 relative overflow-hidden"
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 20 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 40,
+                  elevation: 15,
+                }}
+              >
+                <View className="absolute -top-8 -right-8 w-20 h-20 bg-emerald-50 rounded-full" />
+                <View className="absolute -bottom-6 -left-6 w-16 h-16 bg-red-50 rounded-full" />
+
+                <View
+                  className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mx-auto mb-4"
+                  style={{
+                    shadowColor: "#EF4444",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons name="log-out-outline" size={28} color="#EF4444" />
+                </View>
+
                 <Text className="text-xl font-bold text-gray-900 text-center mb-2">
                   Confirm Logout
                 </Text>
                 <Text className="text-gray-600 text-center mb-6">
                   Are you sure you want to logout from PTCIANS Admin?
                 </Text>
-                <View className="flex-row justify-between gap-3">
+                <View className="flex-row gap-3">
                   <TouchableOpacity
-                    className="flex-1 py-3 px-4 border border-gray-300 rounded-xl"
+                    className="flex-1 py-4 px-4 border-2 border-gray-300 rounded-2xl"
                     onPress={cancelLogout}
                   >
-                    <Text className="text-gray-700 font-medium text-center">
+                    <Text className="text-gray-700 font-semibold text-center">
                       Cancel
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="flex-1 py-3 px-4 bg-red-600 rounded-xl"
+                    className="flex-1 py-4 px-4 bg-red-500 rounded-2xl"
                     onPress={confirmLogout}
+                    style={{
+                      shadowColor: "#EF4444",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 12,
+                      elevation: 5,
+                    }}
                   >
-                    <Text className="text-white font-medium text-center">
+                    <Text className="text-white font-bold text-center">
                       Logout
                     </Text>
                   </TouchableOpacity>

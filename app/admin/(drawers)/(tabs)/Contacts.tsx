@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 import client from "@/utils/axiosInstance";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 
 export default function Contacts() {
   const [contacts, setContacts] = useState([]);
@@ -100,13 +100,13 @@ export default function Contacts() {
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-500";
+        return "bg-amber-500";
       case "read":
         return "bg-blue-500";
       case "replied":
         return "bg-purple-500";
       case "resolved":
-        return "bg-green-500";
+        return "bg-emerald-500";
       default:
         return "bg-gray-500";
     }
@@ -124,11 +124,10 @@ export default function Contacts() {
 
   const renderEditableField = (contact, field, label, icon, type = "text") => {
     const isEditing = editingId === contact.id;
-
     if (isEditing) {
       return (
         <View className="mb-2">
-          <View className="flex-row items-center bg-gray-50 rounded-lg p-2 border border-blue-200">
+          <View className="flex-row items-center bg-emerald-50 rounded-2xl p-3 border-2 border-emerald-200">
             <View className="mr-2">{icon}</View>
             <TextInput
               className="flex-1 text-gray-700"
@@ -150,9 +149,8 @@ export default function Contacts() {
         </View>
       );
     }
-
     return (
-      <View className="flex-row items-center bg-gray-50 rounded-lg p-2 mb-2">
+      <View className="flex-row items-center bg-emerald-50 rounded-2xl p-3 mb-2">
         <View className="mr-2">{icon}</View>
         <Text className="text-gray-700 flex-1">{contact[field]}</Text>
       </View>
@@ -163,12 +161,21 @@ export default function Contacts() {
     const isEditing = editingId === item.id;
 
     return (
-      <View className="bg-white rounded-2xl shadow-lg mx-4 mb-4 overflow-hidden">
+      <View
+        className="bg-white rounded-3xl mx-4 mb-4 overflow-hidden"
+        style={{
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 16,
+          elevation: 5,
+        }}
+      >
         {/* Status Bar */}
         <View
-          className={`${getStatusColor(item.status)} px-4 py-1 flex-row justify-between items-center`}
+          className={`${getStatusColor(item.status)} px-4 py-2 flex-row justify-between items-center`}
         >
-          <Text className="text-white text-xs font-medium uppercase">
+          <Text className="text-white text-xs font-bold uppercase">
             {item.status}
           </Text>
           {!isEditing && item.status !== "resolved" && (
@@ -180,13 +187,12 @@ export default function Contacts() {
           )}
         </View>
 
-        <View className="p-4">
+        <View className="p-5">
           {isEditing ? (
-            // Edit Mode
             <>
               <View className="flex-row justify-between items-start mb-4">
                 <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 rounded-full bg-blue-500 items-center justify-center mr-3">
+                  <View className="w-12 h-12 rounded-full bg-emerald-500 items-center justify-center mr-3">
                     <Text className="text-white text-xl font-bold">
                       {editingData.first_name?.charAt(0)}
                       {editingData.last_name?.charAt(0)}
@@ -195,7 +201,7 @@ export default function Contacts() {
                   <View className="flex-1">
                     <View className="flex-row gap-2">
                       <TextInput
-                        className="flex-1 text-lg font-bold text-gray-800 border-b border-gray-200"
+                        className="flex-1 text-lg font-bold text-gray-800 border-b-2 border-emerald-200"
                         value={editingData.first_name}
                         onChangeText={(text) =>
                           setEditingData({ ...editingData, first_name: text })
@@ -203,7 +209,7 @@ export default function Contacts() {
                         placeholder="First Name"
                       />
                       <TextInput
-                        className="flex-1 text-lg font-bold text-gray-800 border-b border-gray-200"
+                        className="flex-1 text-lg font-bold text-gray-800 border-b-2 border-emerald-200"
                         value={editingData.last_name}
                         onChangeText={(text) =>
                           setEditingData({ ...editingData, last_name: text })
@@ -219,30 +225,30 @@ export default function Contacts() {
                 item,
                 "email",
                 "Email",
-                <Ionicons name="mail-outline" size={20} color="#3b82f6" />,
+                <Ionicons name="mail-outline" size={20} color="#10B981" />,
                 "email",
               )}
               {renderEditableField(
                 item,
                 "phone",
                 "Phone",
-                <Ionicons name="call-outline" size={20} color="#3b82f6" />,
+                <Ionicons name="call-outline" size={20} color="#10B981" />,
                 "phone",
               )}
               {renderEditableField(
                 item,
                 "subject",
                 "Subject",
-                <Ionicons name="bookmark-outline" size={20} color="#3b82f6" />,
+                <Ionicons name="bookmark-outline" size={20} color="#10B981" />,
               )}
 
               <View className="mb-2">
-                <View className="bg-blue-50 rounded-lg p-2 border border-blue-200">
+                <View className="bg-emerald-50 rounded-2xl p-3 border-2 border-emerald-200">
                   <View className="flex-row items-start">
                     <Ionicons
                       name="chatbubble-outline"
                       size={20}
-                      color="#3b82f6"
+                      color="#10B981"
                       className="mr-2"
                     />
                     <TextInput
@@ -261,23 +267,25 @@ export default function Contacts() {
               </View>
 
               <View className="mb-2">
-                <Text className="text-gray-700 font-semibold mb-1">Status</Text>
+                <Text className="text-gray-700 font-semibold mb-2 ml-1">
+                  Status
+                </Text>
                 <View className="flex-row gap-2">
                   {["pending", "read", "replied", "resolved"].map((status) => (
                     <TouchableOpacity
                       key={status}
                       onPress={() => setEditingData({ ...editingData, status })}
-                      className={`flex-1 py-2 rounded-lg ${
+                      className={`flex-1 py-2.5 rounded-full ${
                         editingData.status === status
-                          ? "bg-blue-500"
-                          : "bg-gray-200"
+                          ? "bg-emerald-500"
+                          : "bg-emerald-50"
                       }`}
                     >
                       <Text
-                        className={`text-center text-sm ${
+                        className={`text-center text-sm font-semibold ${
                           editingData.status === status
                             ? "text-white"
-                            : "text-gray-700"
+                            : "text-emerald-700"
                         }`}
                       >
                         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -287,24 +295,31 @@ export default function Contacts() {
                 </View>
               </View>
 
-              <View className="flex-row gap-2 mt-3">
+              <View className="flex-row gap-3 mt-3">
                 <TouchableOpacity
                   onPress={cancelEditing}
-                  className="flex-1 bg-gray-300 py-2 rounded-lg"
+                  className="flex-1 bg-gray-200 py-3 rounded-2xl"
                 >
-                  <Text className="text-center text-gray-700 font-medium">
+                  <Text className="text-center text-gray-700 font-semibold">
                     Cancel
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => saveContact(item.id)}
                   disabled={updating}
-                  className="flex-1 bg-blue-500 py-2 rounded-lg"
+                  className="flex-1 bg-emerald-500 py-3 rounded-2xl"
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 12,
+                    elevation: 5,
+                  }}
                 >
                   {updating ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <Text className="text-center text-white font-medium">
+                    <Text className="text-center text-white font-bold">
                       Save
                     </Text>
                   )}
@@ -312,12 +327,11 @@ export default function Contacts() {
               </View>
             </>
           ) : (
-            // View Mode
             <>
               <View className="flex-row justify-between items-start mb-3">
                 <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mr-3">
-                    <Text className="text-blue-600 text-xl font-bold">
+                  <View className="w-12 h-12 rounded-full bg-emerald-100 items-center justify-center mr-3">
+                    <Text className="text-emerald-600 text-xl font-bold">
                       {item.first_name.charAt(0)}
                       {item.last_name.charAt(0)}
                     </Text>
@@ -326,60 +340,58 @@ export default function Contacts() {
                     <Text className="text-lg font-bold text-gray-800">
                       {item.first_name} {item.last_name}
                     </Text>
-                    <Text className="text-xs text-gray-500">
+                    <Text className="text-xs text-gray-400">
                       ID: {item.id.slice(0, 8)}...
                     </Text>
                   </View>
                 </View>
-                <View className="flex-row gap-1">
-                  <TouchableOpacity
-                    onPress={() => startEditing(item)}
-                    className="p-2"
-                  >
-                    <Feather name="edit-2" size={18} color="#3b82f6" />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  onPress={() => startEditing(item)}
+                  className="w-9 h-9 bg-emerald-100 rounded-full items-center justify-center"
+                >
+                  <Feather name="edit-2" size={16} color="#10B981" />
+                </TouchableOpacity>
               </View>
 
               <View className="gap-2 mt-2">
-                <View className="flex-row items-center bg-gray-50 rounded-lg p-2">
+                <View className="flex-row items-center bg-emerald-50 rounded-2xl p-3">
                   <Ionicons
                     name="mail-outline"
                     size={20}
-                    color="#3b82f6"
+                    color="#10B981"
                     className="mr-2"
                   />
                   <Text className="text-gray-700 flex-1">{item.email}</Text>
                 </View>
 
-                <View className="flex-row items-center bg-gray-50 rounded-lg p-2">
+                <View className="flex-row items-center bg-emerald-50 rounded-2xl p-3">
                   <Ionicons
                     name="call-outline"
                     size={20}
-                    color="#3b82f6"
+                    color="#10B981"
                     className="mr-2"
                   />
                   <Text className="text-gray-700">{item.phone}</Text>
                 </View>
 
-                <View className="flex-row items-center bg-blue-50 rounded-lg p-2">
+                <View className="flex-row items-center bg-emerald-50 rounded-2xl p-3 border-2 border-emerald-200">
                   <Ionicons
                     name="bookmark-outline"
                     size={20}
-                    color="#3b82f6"
+                    color="#10B981"
                     className="mr-2"
                   />
-                  <Text className="text-gray-700 font-medium flex-1">
+                  <Text className="text-gray-700 font-semibold flex-1">
                     {item.subject}
                   </Text>
                 </View>
 
-                <View className="bg-gray-50 rounded-xl p-3 mt-1">
+                <View className="bg-emerald-50 rounded-2xl p-3 mt-1">
                   <View className="flex-row items-start">
                     <Ionicons
                       name="chatbubble-outline"
                       size={20}
-                      color="#3b82f6"
+                      color="#10B981"
                       className="mr-2"
                     />
                     <Text className="text-gray-700 flex-1">{item.message}</Text>
@@ -388,8 +400,10 @@ export default function Contacts() {
 
                 <View className="flex-row justify-between items-center mt-2">
                   <View className="flex-row items-center">
-                    <Ionicons name="time-outline" size={12} color="#9ca3af" />
-                    <Text className="text-xs text-gray-400 ml-1">
+                    <View className="w-5 h-5 bg-emerald-100 rounded-full items-center justify-center mr-1.5">
+                      <Ionicons name="time-outline" size={10} color="#10B981" />
+                    </View>
+                    <Text className="text-xs text-gray-400">
                       {new Date(item.created_at).toLocaleDateString()} at{" "}
                       {new Date(item.created_at).toLocaleTimeString()}
                     </Text>
@@ -399,10 +413,17 @@ export default function Contacts() {
                       onPress={() =>
                         updateStatus(item.id, getNextStatus(item.status))
                       }
-                      className="bg-blue-500 px-3 py-1 rounded-full flex-row items-center"
+                      className="bg-emerald-500 px-4 py-2 rounded-full flex-row items-center"
+                      style={{
+                        shadowColor: "#10B981",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 8,
+                        elevation: 3,
+                      }}
                     >
                       <Ionicons name="refresh" size={12} color="white" />
-                      <Text className="text-white text-xs font-medium ml-1">
+                      <Text className="text-white text-xs font-semibold ml-1.5">
                         Update Status
                       </Text>
                     </TouchableOpacity>
@@ -418,9 +439,13 @@ export default function Contacts() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-gradient-to-b from-blue-50 to-gray-50">
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text className="mt-4 text-blue-600 font-medium">
+      <View className="flex-1 justify-center items-center bg-emerald-50">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="mt-4 text-emerald-600 font-medium">
           Loading contacts...
         </Text>
       </View>
@@ -429,20 +454,36 @@ export default function Contacts() {
 
   if (error) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <View className="bg-red-50 rounded-2xl p-6 mx-4 border border-red-200">
-          <MaterialIcons
-            name="error-outline"
-            size={48}
-            color="#ef4444"
-            className="self-center mb-2"
-          />
-          <Text className="text-red-600 text-center font-medium">{error}</Text>
+      <View className="flex-1 justify-center items-center bg-emerald-50">
+        <View
+          className="bg-white rounded-3xl p-8 mx-4 items-center relative overflow-hidden"
+          style={{
+            shadowColor: "#EF4444",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-6 -right-6 w-16 h-16 bg-red-50 rounded-full" />
+          <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4">
+            <MaterialIcons name="error-outline" size={32} color="#EF4444" />
+          </View>
+          <Text className="text-gray-800 text-lg font-bold text-center">
+            {error}
+          </Text>
           <TouchableOpacity
             onPress={fetchContacts}
-            className="mt-4 bg-red-500 px-4 py-2 rounded-lg"
+            className="mt-4 bg-emerald-500 px-6 py-3 rounded-2xl"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 5,
+            }}
           >
-            <Text className="text-white text-center font-medium">Retry</Text>
+            <Text className="text-white font-bold text-center">Retry</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -451,42 +492,57 @@ export default function Contacts() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View className="flex-1 bg-gradient-to-b from-blue-50 to-gray-50">
+      <View className="flex-1 bg-emerald-50">
         {/* Header */}
-        <View className="bg-blue-600 px-5 py-6 rounded-b-3xl shadow-lg">
-          <View className="flex-row justify-between items-center mb-1">
+        <View
+          className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+          style={{
+            borderBottomLeftRadius: 40,
+            borderBottomRightRadius: 40,
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.3,
+            shadowRadius: 20,
+            elevation: 10,
+          }}
+        >
+          <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+          <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+          <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+
+          <View className="flex-row justify-between items-center mb-3">
             <Text className="text-3xl font-bold text-white">Contacts</Text>
             <MaterialIcons name="contacts" size={32} color="white" />
           </View>
-          <Text className="text-blue-100 text-sm">
+          <Text className="text-emerald-100 text-base">
             Total: {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
           </Text>
           <View className="flex-row mt-3 flex-wrap gap-2">
-            <View className="bg-white/20 rounded-full px-3 py-1 flex-row items-center">
+            <View className="bg-white/20 rounded-full px-3 py-1.5 flex-row items-center">
               <Ionicons name="time-outline" size={12} color="white" />
-              <Text className="text-white text-xs ml-1">
+              <Text className="text-white text-xs font-medium ml-1">
                 Pending: {contacts.filter((c) => c.status === "pending").length}
               </Text>
             </View>
-            <View className="bg-white/20 rounded-full px-3 py-1 flex-row items-center">
+            <View className="bg-white/20 rounded-full px-3 py-1.5 flex-row items-center">
               <Ionicons name="eye-outline" size={12} color="white" />
-              <Text className="text-white text-xs ml-1">
+              <Text className="text-white text-xs font-medium ml-1">
                 Read: {contacts.filter((c) => c.status === "read").length}
               </Text>
             </View>
-            <View className="bg-white/20 rounded-full px-3 py-1 flex-row items-center">
+            <View className="bg-white/20 rounded-full px-3 py-1.5 flex-row items-center">
               <Ionicons name="chatbubble-outline" size={12} color="white" />
-              <Text className="text-white text-xs ml-1">
+              <Text className="text-white text-xs font-medium ml-1">
                 Replied: {contacts.filter((c) => c.status === "replied").length}
               </Text>
             </View>
-            <View className="bg-white/20 rounded-full px-3 py-1 flex-row items-center">
+            <View className="bg-white/20 rounded-full px-3 py-1.5 flex-row items-center">
               <Ionicons
                 name="checkmark-circle-outline"
                 size={12}
                 color="white"
               />
-              <Text className="text-white text-xs ml-1">
+              <Text className="text-white text-xs font-medium ml-1">
                 Resolved:{" "}
                 {contacts.filter((c) => c.status === "resolved").length}
               </Text>
@@ -498,11 +554,7 @@ export default function Contacts() {
           data={contacts}
           keyExtractor={(item) => item.id}
           renderItem={renderContactItem}
-          contentContainerStyle={{
-            paddingTop: 16,
-            paddingBottom: 20,
-            marginBottom: 16,
-          }}
+          contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         />
       </View>

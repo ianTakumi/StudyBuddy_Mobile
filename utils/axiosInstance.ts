@@ -4,7 +4,7 @@ import axios from "axios";
 const getBaseURL = () => {
   if (__DEV__) {
     // Development - using your local IP
-    return "http://192.168.1.63:5000/api";
+    return "http://192.168.100.8:5000/api";
   } else {
     // Production - using your deployed server
     return "https://studybuddy-backend-0c8648682908.herokuapp.com/api/";

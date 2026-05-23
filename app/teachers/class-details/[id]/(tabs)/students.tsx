@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { useGlobalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useSelector } from "react-redux";
 import client from "@/utils/axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
+import { useGlobalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSelector } from "react-redux";
 
 interface Student {
   id: string;
@@ -81,7 +81,6 @@ export default function Students() {
 
   const buildClassInfoFromParams = () => {
     if (!globalParams.id) return null;
-
     return {
       id: globalParams.id as string,
       name: (globalParams.className as string) || "Class",
@@ -95,22 +94,16 @@ export default function Students() {
     };
   };
 
-  // Fetch students data
   const fetchStudents = async () => {
     if (!classId) {
       Alert.alert("Error", "Class ID not found");
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
-
-      // Set class info from globalParams first
       const paramsClassInfo = buildClassInfoFromParams();
       setClassInfo(paramsClassInfo);
-
-      // Fetch students from API
       const studentsResponse = await client.get(
         `/classes/${user.id}/${classId}/students`,
       );
@@ -179,39 +172,79 @@ export default function Students() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-gray-600 mt-4">Loading students...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading students...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Header - Always visible with class code card */}
-      <View className="bg-white pt-16 pb-6 px-6 border-b border-gray-200">
+    <View className="flex-1 bg-emerald-50">
+      {/* Header */}
+      <View
+        className="w-full pt-16 pb-6 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+
         <View className="mb-4">
-          <Text className="text-3xl font-bold text-gray-900">
+          <Text className="text-3xl font-bold text-white">
             {classInfo?.name || "Class"}
           </Text>
-          <Text className="text-gray-600 mt-1">
+          <Text className="text-emerald-100 text-base mt-1">
             {classInfo?.subject} • {classInfo?.gradeLevel} • {students.length}{" "}
             students
           </Text>
           {(classInfo?.room || classInfo?.schedule) && (
-            <Text className="text-gray-500 text-sm mt-1">
-              {classInfo?.room && `Room ${classInfo.room}`}
-              {classInfo?.room && classInfo?.schedule && " • "}
-              {classInfo?.schedule && formatSchedule(classInfo.schedule)}
-            </Text>
+            <View className="flex-row items-center mt-2 gap-3">
+              {classInfo?.room && (
+                <View className="flex-row items-center">
+                  <View className="w-5 h-5 bg-white/20 rounded-full items-center justify-center mr-1.5">
+                    <Ionicons name="location-outline" size={11} color="white" />
+                  </View>
+                  <Text className="text-emerald-100 text-sm">
+                    Room {classInfo.room}
+                  </Text>
+                </View>
+              )}
+              {classInfo?.schedule && (
+                <View className="flex-row items-center">
+                  <View className="w-5 h-5 bg-white/20 rounded-full items-center justify-center mr-1.5">
+                    <Ionicons name="time-outline" size={11} color="white" />
+                  </View>
+                  <Text className="text-emerald-100 text-sm">
+                    {formatSchedule(classInfo.schedule)}
+                  </Text>
+                </View>
+              )}
+            </View>
           )}
         </View>
 
-        {/* Class Code Card - Blue themed, no gradient */}
-        <View className="bg-blue-500 rounded-2xl p-4">
+        {/* Class Code Card */}
+        <View className="bg-white/20 rounded-2xl p-5">
           <View className="flex-row justify-between items-center">
             <View className="flex-1">
-              <Text className="text-white text-sm font-medium">Class Code</Text>
+              <Text className="text-white text-sm font-medium opacity-80">
+                Class Code
+              </Text>
               <View className="flex-row items-center mt-1">
                 {showClassCode ? (
                   <Text className="text-white text-2xl font-bold mr-3">
@@ -224,7 +257,7 @@ export default function Students() {
                 )}
                 <TouchableOpacity
                   onPress={() => setShowClassCode(!showClassCode)}
-                  className="bg-white/20 rounded-lg px-2 py-1"
+                  className="bg-white/20 rounded-full w-8 h-8 items-center justify-center"
                 >
                   <Ionicons
                     name={showClassCode ? "eye-off-outline" : "eye-outline"}
@@ -233,15 +266,22 @@ export default function Students() {
                   />
                 </TouchableOpacity>
               </View>
-              <Text className="text-white/80 text-xs mt-2">
+              <Text className="text-white/70 text-xs mt-2">
                 Share this code with students to join your class
               </Text>
             </View>
             <TouchableOpacity
               onPress={() => copyToClipboard(classInfo?.class_code || "")}
-              className="bg-white rounded-xl px-4 py-3 ml-4"
+              className="bg-white rounded-2xl px-4 py-3 ml-4"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
             >
-              <Ionicons name="copy-outline" size={20} color="#3B82F6" />
+              <Ionicons name="copy-outline" size={20} color="#10B981" />
             </TouchableOpacity>
           </View>
         </View>
@@ -250,60 +290,112 @@ export default function Students() {
       {/* Students List */}
       <ScrollView
         className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#3B82F6"]}
-            tintColor="#3B82F6"
+            colors={["#10B981"]}
+            tintColor="#10B981"
             title="Pull to refresh"
             titleColor="#6B7280"
           />
         }
       >
         <View className="p-4">
-          {/* Stats - Removed Active stats */}
+          {/* Stats Card */}
           <View className="mb-6">
-            <View className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <Text className="text-gray-600 text-sm font-medium">
-                Total Students
-              </Text>
-              <Text className="text-2xl font-bold text-gray-900 mt-1">
+            <View
+              className="bg-white rounded-3xl p-5 relative overflow-hidden"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                elevation: 5,
+              }}
+            >
+              <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+              <View className="absolute -bottom-3 -left-3 w-12 h-12 bg-emerald-50 rounded-full opacity-70" />
+
+              <View className="flex-row items-center mb-2">
+                <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="people-outline" size={20} color="#10B981" />
+                </View>
+                <Text className="text-gray-500 text-sm font-medium">
+                  Total Students
+                </Text>
+              </View>
+              <Text className="text-3xl font-bold text-gray-900 ml-13">
                 {students.length}
               </Text>
-              <Text className="text-gray-400 text-xs mt-1">
+              <Text className="text-gray-400 text-xs mt-1 ml-13">
                 Enrolled in class
               </Text>
             </View>
           </View>
 
           {/* Students List */}
-          <View className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <View className="px-4 py-3 border-b border-gray-100">
-              <Text className="font-bold text-gray-900 text-lg">
-                Students ({students.length})
-              </Text>
+          <View
+            className="bg-white rounded-3xl overflow-hidden relative"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full opacity-70" />
+
+            <View className="px-5 py-4 border-b border-emerald-100">
+              <View className="flex-row items-center">
+                <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                  <Ionicons name="people-outline" size={16} color="#10B981" />
+                </View>
+                <Text className="font-bold text-gray-900 text-lg">
+                  Students ({students.length})
+                </Text>
+              </View>
             </View>
 
             {students.length === 0 ? (
               <View className="p-8 items-center">
-                <Ionicons name="people-outline" size={64} color="#9CA3AF" />
-                <Text className="text-gray-500 text-lg font-semibold mt-4">
+                <View
+                  className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-4"
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons name="people-outline" size={36} color="#10B981" />
+                </View>
+                <Text className="text-gray-800 text-lg font-bold">
                   No students yet
                 </Text>
-                <Text className="text-gray-400 text-center mt-2">
+                <Text className="text-gray-500 text-center mt-2 text-sm">
                   Share your class code with students to get started
                 </Text>
                 <TouchableOpacity
-                  className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center mt-4"
+                  className="bg-emerald-500 rounded-2xl py-4 px-8 flex-row items-center mt-4"
                   onPress={() => copyToClipboard(classInfo?.class_code || "")}
+                  style={{
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 16,
+                    elevation: 8,
+                  }}
                 >
                   <Ionicons
                     name="share-social-outline"
                     size={18}
                     color="white"
                   />
-                  <Text className="text-white font-semibold ml-2">
+                  <Text className="text-white font-bold ml-2">
                     Share Class Code
                   </Text>
                 </TouchableOpacity>
@@ -312,31 +404,33 @@ export default function Students() {
               students.map((student, index) => (
                 <View
                   key={student.id}
-                  className={`flex-row items-center justify-between px-4 py-3 ${
+                  className={`flex-row items-center justify-between px-5 py-4 ${
                     index !== students.length - 1
-                      ? "border-b border-gray-100"
+                      ? "border-b border-emerald-100"
                       : ""
                   }`}
                 >
                   <View className="flex-row items-center flex-1">
-                    <View className="bg-blue-100 rounded-xl w-10 h-10 items-center justify-center mr-3">
-                      <Ionicons name="person" size={20} color="#3B82F6" />
+                    <View className="bg-emerald-100 rounded-full w-11 h-11 items-center justify-center mr-3">
+                      <Text className="text-emerald-600 font-bold text-base">
+                        {student.first_name?.[0]}
+                        {student.last_name?.[0]}
+                      </Text>
                     </View>
                     <View className="flex-1">
                       <Text className="font-semibold text-gray-900 text-base">
                         {student.first_name} {student.last_name}
                       </Text>
-                      <Text className="text-gray-500 text-sm mt-1">
+                      <Text className="text-gray-500 text-sm mt-0.5">
                         {student.email}
                       </Text>
                       {student.student_id && (
-                        <Text className="text-gray-400 text-xs mt-1">
+                        <Text className="text-gray-400 text-xs mt-0.5">
                           ID: {student.student_id}
                         </Text>
                       )}
                     </View>
                   </View>
-
                   <TouchableOpacity
                     onPress={() =>
                       removeStudent(
@@ -344,12 +438,12 @@ export default function Students() {
                         `${student.first_name} ${student.last_name}`,
                       )
                     }
-                    className="p-2"
+                    className="w-9 h-9 bg-emerald-50 rounded-full items-center justify-center"
                   >
                     <Ionicons
                       name="ellipsis-vertical"
                       size={16}
-                      color="#6B7280"
+                      color="#10B981"
                     />
                   </TouchableOpacity>
                 </View>

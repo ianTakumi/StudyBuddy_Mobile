@@ -1,18 +1,18 @@
 // app/Users.tsx - Users Management Screen
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+import client from "@/utils/axiosInstance";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import client from "@/utils/axiosInstance";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface User {
   id: string;
@@ -36,14 +36,11 @@ export default function UsersScreen() {
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // Fetch users from API
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await client.get("/users");
-
       if (response.data.success) {
-        // Filter out admin users
         const allUsers = response.data.data || [];
         const nonAdminUsers = allUsers.filter(
           (user: User) => user.role !== "admin",
@@ -70,23 +67,17 @@ export default function UsersScreen() {
     fetchUsers();
   }, []);
 
-  // Safe filter function with null checks
   const filteredUsers = users.filter((user) => {
     if (!user) return false;
-
     const searchLower = searchQuery.toLowerCase();
-
     const matchesSearch =
       (user.first_name?.toLowerCase() || "").includes(searchLower) ||
       (user.last_name?.toLowerCase() || "").includes(searchLower) ||
       (user.email?.toLowerCase() || "").includes(searchLower);
-
     const matchesRole = selectedRole === "all" || user.role === selectedRole;
-
     return matchesSearch && matchesRole;
   });
 
-  // Get only inactive teachers for selection when role is teacher
   const getInactiveTeachers = () => {
     return filteredUsers.filter(
       (user) => user.role === "teacher" && user.status === "inactive",
@@ -104,10 +95,7 @@ export default function UsersScreen() {
   const selectAllInactiveTeachers = () => {
     const inactiveTeachers = getInactiveTeachers();
     if (inactiveTeachers.length === 0) return;
-
     const inactiveTeacherIds = inactiveTeachers.map((user) => user.id);
-
-    // If all inactive teachers are already selected, deselect them
     if (
       selectedUsers.length === inactiveTeacherIds.length &&
       inactiveTeacherIds.every((id) => selectedUsers.includes(id))
@@ -140,7 +128,6 @@ export default function UsersScreen() {
       );
       return;
     }
-
     Alert.alert(
       "Activate Teachers",
       `Are you sure you want to activate ${selectedUsers.length} teacher(s)?`,
@@ -150,17 +137,12 @@ export default function UsersScreen() {
           text: "Confirm",
           onPress: async () => {
             try {
-              // Activate each selected teacher
               const activationPromises = selectedUsers.map((userId) =>
                 client.put(`/users/${userId}/activate`, { status: "active" }),
               );
-
               await Promise.all(activationPromises);
-
-              // Refresh the users list after activation
               fetchUsers();
               setSelectedUsers([]);
-
               Alert.alert(
                 "Success",
                 `${selectedUsers.length} teacher(s) activated successfully`,
@@ -180,7 +162,6 @@ export default function UsersScreen() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Unknown";
-
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Invalid date";
@@ -197,9 +178,9 @@ export default function UsersScreen() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case "teacher":
-        return "bg-blue-500";
+        return "bg-emerald-500";
       case "student":
-        return "bg-green-500";
+        return "bg-blue-500";
       default:
         return "bg-gray-500";
     }
@@ -207,82 +188,95 @@ export default function UsersScreen() {
 
   const getStatusColor = (status: string) => {
     return status === "active"
-      ? "bg-green-100 text-green-800"
-      : "bg-red-100 text-red-800";
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-red-50 text-red-600";
   };
 
-  const getUserName = (user: User) => {
-    return (
-      `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
-      "Unknown User"
-    );
-  };
-
-  const getUserEmail = (user: User) => {
-    return user.email || "No email";
-  };
-
-  const getUserPhone = (user: User) => {
-    return user.phone || "No phone";
-  };
+  const getUserName = (user: User) =>
+    `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown User";
+  const getUserEmail = (user: User) => user.email || "No email";
+  const getUserPhone = (user: User) => user.phone || "No phone";
 
   const UserCard = ({ user }: { user: User }) => {
     const isTeacher = user.role === "teacher";
-    const isInactiveTeacher = isTeacher && user.status === "inactive";
-    const canSelect = isTeacher; // Only teachers can be selected
+    const canSelect = isTeacher;
 
     return (
       <TouchableOpacity
-        className={`bg-white p-4 rounded-lg mb-3 border-2 ${
+        className={`bg-white p-5 rounded-3xl mb-4 border-2 relative overflow-hidden ${
           selectedUsers.includes(user.id) && canSelect
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-200"
+            ? "border-emerald-500 bg-emerald-50"
+            : "border-emerald-100"
         }`}
         onPress={() => canSelect && toggleUserSelection(user.id)}
         activeOpacity={canSelect ? 0.7 : 1}
+        style={{
+          shadowColor: selectedUsers.includes(user.id) ? "#10B981" : "#10B981",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 4,
+        }}
       >
+        <View className="absolute -top-3 -right-3 w-10 h-10 bg-emerald-50 rounded-full opacity-70" />
+
         <View className="flex-row justify-between items-start mb-3">
           <View className="flex-1">
             <View className="flex-row items-center mb-1 flex-wrap gap-2">
-              <Text className="text-lg font-semibold text-gray-900">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                <Text className="text-emerald-600 font-bold text-base">
+                  {user.first_name?.[0]}
+                  {user.last_name?.[0]}
+                </Text>
+              </View>
+              <Text className="text-lg font-bold text-gray-900">
                 {getUserName(user)}
               </Text>
               <View
-                className={`px-2 py-1 rounded-full ${getRoleColor(user.role || "student")}`}
+                className={`px-3 py-1 rounded-full ${getRoleColor(user.role || "student")}`}
               >
-                <Text className="text-white text-xs font-medium capitalize">
+                <Text className="text-white text-xs font-semibold capitalize">
                   {user.role || "student"}
                 </Text>
               </View>
               {isTeacher && (
                 <View
-                  className={`px-2 py-1 rounded-full ${getStatusColor(user.status)}`}
+                  className={`px-3 py-1 rounded-full ${getStatusColor(user.status)}`}
                 >
-                  <Text className={`text-xs font-medium capitalize`}>
+                  <Text className="text-xs font-semibold capitalize">
                     {user.status}
                   </Text>
                 </View>
               )}
             </View>
-            <Text className="text-gray-600 text-sm">{getUserEmail(user)}</Text>
-            <Text className="text-gray-500 text-sm">{getUserPhone(user)}</Text>
+            <Text className="text-gray-500 text-sm ml-12">
+              {getUserEmail(user)}
+            </Text>
+            <Text className="text-gray-400 text-sm ml-12">
+              {getUserPhone(user)}
+            </Text>
           </View>
         </View>
 
-        <View className="flex-row justify-between items-center border-t border-gray-100 pt-3">
-          <Text className="text-gray-500 text-xs">
-            Joined: {formatDate(user.created_at)}
-          </Text>
+        <View className="flex-row justify-between items-center border-t border-emerald-100 pt-3 ml-12">
+          <View className="flex-row items-center">
+            <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1.5">
+              <Ionicons name="calendar-outline" size={9} color="#10B981" />
+            </View>
+            <Text className="text-gray-400 text-xs">
+              Joined: {formatDate(user.created_at)}
+            </Text>
+          </View>
           <View className="flex-row gap-2">
             <TouchableOpacity
-              className="p-2 bg-gray-100 rounded-lg"
+              className="w-9 h-9 bg-emerald-100 rounded-full items-center justify-center"
               onPress={() => handleEditUser(user)}
             >
-              <Ionicons name="create-outline" size={16} color="#4B5563" />
+              <Ionicons name="create-outline" size={16} color="#10B981" />
             </TouchableOpacity>
             {isTeacher && user.status === "inactive" && (
               <TouchableOpacity
-                className="p-2 bg-green-100 rounded-lg"
+                className="w-9 h-9 bg-emerald-500 rounded-full items-center justify-center"
                 onPress={() => {
                   setSelectedUsers([user.id]);
                   activateTeachers();
@@ -291,7 +285,7 @@ export default function UsersScreen() {
                 <Ionicons
                   name="checkmark-circle-outline"
                   size={16}
-                  color="#10B981"
+                  color="white"
                 />
               </TouchableOpacity>
             )}
@@ -303,9 +297,15 @@ export default function UsersScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 bg-gray-50 pt-14 justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-gray-600 mt-4">Loading users...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading users...
+        </Text>
       </View>
     );
   }
@@ -319,96 +319,128 @@ export default function UsersScreen() {
   ).length;
 
   return (
-    <View className="flex-1 bg-gray-50 pt-14">
+    <View className="flex-1 bg-emerald-50">
       {/* Header */}
-      <View className="bg-white px-6 py-4 shadow-sm">
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+
         <View className="flex-row justify-between items-center">
-          <Text className="text-2xl font-bold text-gray-900">
-            Users Management
-          </Text>
+          <View className="flex-1">
+            <Text className="text-3xl font-bold text-white">
+              Users Management
+            </Text>
+          </View>
           <TouchableOpacity
-            className="bg-blue-500 px-4 py-2 rounded-lg flex-row items-center"
-            onPress={() => {
-              /* Navigate to add user */
+            className="bg-white rounded-2xl px-5 py-3 flex-row items-center"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 5,
             }}
           >
-            <Ionicons name="person-add" size={20} color="white" />
-            <Text className="text-white font-medium ml-2">Add User</Text>
+            <Ionicons name="person-add" size={20} color="#10B981" />
+            <Text className="text-emerald-600 font-bold ml-2">Add User</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Search and Filters */}
-      <View className="bg-white px-4 py-3 shadow-sm">
-        <View className="flex-row gap-3 mb-3">
-          <View className="flex-1 bg-gray-100 rounded-lg px-3 py-2 flex-row items-center">
-            <Ionicons name="search" size={20} color="#9CA3AF" />
-            <TextInput
-              placeholder="Search users..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="flex-1 ml-2 text-gray-800"
-              placeholderTextColor={"#9CA3AF"}
-            />
-          </View>
+      <View
+        className="bg-white mx-4 mt-6 rounded-2xl px-5 py-4"
+        style={{
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 3,
+        }}
+      >
+        <View className="flex-row items-center bg-emerald-50 rounded-2xl px-4 py-3 mb-3">
+          <Ionicons name="search" size={20} color="#10B981" />
+          <TextInput
+            placeholder="Search users..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            className="flex-1 ml-3 text-gray-800"
+            placeholderTextColor="#9CA3AF"
+          />
         </View>
 
-        <View className="flex-row justify-between">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="flex-1"
-          >
-            <View className="flex-row gap-2">
-              {["all", "student", "teacher"].map((role) => (
-                <TouchableOpacity
-                  key={role}
-                  className={`px-4 py-2 rounded-full ${
-                    selectedRole === role ? "bg-blue-500" : "bg-gray-200"
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="flex-row gap-2">
+            {["all", "student", "teacher"].map((role) => (
+              <TouchableOpacity
+                key={role}
+                className={`px-5 py-2.5 rounded-full ${
+                  selectedRole === role ? "bg-emerald-500" : "bg-emerald-50"
+                }`}
+                onPress={() => {
+                  setSelectedRole(role);
+                  setSelectedUsers([]);
+                }}
+              >
+                <Text
+                  className={`font-semibold ${
+                    selectedRole === role ? "text-white" : "text-emerald-700"
                   }`}
-                  onPress={() => {
-                    setSelectedRole(role);
-                    // Clear selections when changing filters
-                    setSelectedUsers([]);
-                  }}
                 >
-                  <Text
-                    className={`font-medium ${
-                      selectedRole === role ? "text-white" : "text-gray-700"
-                    }`}
-                  >
-                    {role === "all"
-                      ? "All Users"
-                      : role.charAt(0).toUpperCase() + role.slice(1)}
-                    {role !== "all" ? "s" : ""}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
+                  {role === "all"
+                    ? "All Users"
+                    : role.charAt(0).toUpperCase() + role.slice(1) + "s"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
-      {/* Bulk Actions - Only show when teachers filter is selected and there are inactive teachers */}
+      {/* Bulk Actions */}
       {selectedRole === "teacher" && inactiveTeachersCount > 0 && (
-        <View className="bg-blue-50 px-4 py-3 border-b border-blue-200">
+        <View className="bg-emerald-50 mx-4 mt-4 rounded-2xl px-5 py-4 border-2 border-emerald-200">
           <View className="flex-row justify-between items-center">
-            <Text className="text-blue-800 font-medium">
-              {inactiveTeachersCount} inactive teacher(s) available
-              {selectedUsers.length > 0 &&
-                ` (${selectedUsers.length} selected)`}
-            </Text>
-            <View className="flex-row gap-2">
-              {selectedUsers.length > 0 && (
-                <TouchableOpacity
-                  className="px-3 py-1 bg-green-500 rounded-lg flex-row items-center"
-                  onPress={activateTeachers}
-                >
-                  <Ionicons name="checkmark-circle" size={16} color="white" />
-                  <Text className="text-white text-sm ml-1">Activate</Text>
-                </TouchableOpacity>
-              )}
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                <Ionicons name="people-outline" size={16} color="#10B981" />
+              </View>
+              <Text className="text-emerald-800 font-semibold">
+                {inactiveTeachersCount} inactive teacher(s)
+                {selectedUsers.length > 0 &&
+                  ` (${selectedUsers.length} selected)`}
+              </Text>
             </View>
+            {selectedUsers.length > 0 && (
+              <TouchableOpacity
+                className="px-5 py-2.5 bg-emerald-500 rounded-full flex-row items-center"
+                onPress={activateTeachers}
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="checkmark-circle" size={16} color="white" />
+                <Text className="text-white text-sm font-semibold ml-1.5">
+                  Activate
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
@@ -416,22 +448,32 @@ export default function UsersScreen() {
       {/* Users List */}
       <ScrollView
         className="flex-1 px-4 py-4"
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#10B981"]}
+            tintColor="#10B981"
+          />
         }
       >
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-gray-600">
-            Showing {displayUsers.length} user(s)
-          </Text>
-          {/* Only show Select All when viewing teachers and there are inactive teachers */}
+          <View className="flex-row items-center">
+            <View className="w-6 h-6 bg-emerald-100 rounded-full items-center justify-center mr-2">
+              <Ionicons name="list-outline" size={12} color="#10B981" />
+            </View>
+            <Text className="text-gray-600 font-medium">
+              Showing {displayUsers.length} user(s)
+            </Text>
+          </View>
           {selectedRole === "teacher" && inactiveTeachersCount > 0 && (
             <TouchableOpacity onPress={selectAllInactiveTeachers}>
-              <Text className="text-blue-500 font-medium">
+              <Text className="text-emerald-600 font-semibold">
                 {selectedInactiveCount === inactiveTeachersCount &&
                 inactiveTeachersCount > 0
                   ? "Deselect All"
-                  : "Select All Inactive Teachers"}
+                  : "Select All Inactive"}
               </Text>
             </TouchableOpacity>
           )}
@@ -443,11 +485,13 @@ export default function UsersScreen() {
 
         {displayUsers.length === 0 && (
           <View className="items-center justify-center py-12">
-            <Ionicons name="people-outline" size={64} color="#9CA3AF" />
-            <Text className="text-gray-500 text-lg mt-4">
+            <View className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-4">
+              <Ionicons name="people-outline" size={36} color="#10B981" />
+            </View>
+            <Text className="text-gray-800 text-lg font-bold">
               {users.length === 0 ? "No users found" : "No matching users"}
             </Text>
-            <Text className="text-gray-400 text-center mt-2">
+            <Text className="text-gray-500 text-center mt-2 text-sm">
               {users.length === 0
                 ? "There are no users in the system"
                 : "Try adjusting your search or filters"}

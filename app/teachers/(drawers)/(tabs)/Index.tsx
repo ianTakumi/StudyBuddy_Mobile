@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useCallback } from "react";
+import client from "@/utils/axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
+  ActivityIndicator,
   Alert,
   RefreshControl,
-  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
-import { useRouter } from "expo-router";
-import client from "@/utils/axiosInstance";
 
 interface Class {
   id: string;
@@ -56,7 +56,6 @@ export default function TeacherHomePage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
 
-  // State for dashboard stats
   const [stats, setStats] = useState({
     activeClasses: 0,
     flashcardSets: 0,
@@ -65,7 +64,6 @@ export default function TeacherHomePage() {
     todayClasses: [] as Class[],
   });
 
-  // Get today's day name
   const getTodayDay = (): string => {
     const days = [
       "Sunday",
@@ -80,7 +78,6 @@ export default function TeacherHomePage() {
     return days[today.getDay()];
   };
 
-  // Format schedule for display
   const formatScheduleTime = (schedule: ScheduleItem[]): string => {
     if (!schedule || schedule.length === 0) return "No schedule";
     const today = getTodayDay();
@@ -95,23 +92,19 @@ export default function TeacherHomePage() {
       .join(", ");
   };
 
-  // Fetch teacher's classes
   const fetchTeacherClasses = async () => {
     try {
-      const response = await client.get(`/classes/${user.id}`);
+      const response = await client.get(`/classes/${user?.id}`);
       if (response.data.success) {
         const classesData = response.data.data || [];
         setClasses(classesData);
 
-        // Calculate total students across all classes
         const totalStudents = classesData.reduce(
-          (sum: number, classItem: Class) => {
-            return sum + (classItem.student_count || 0);
-          },
+          (sum: number, classItem: Class) =>
+            sum + (classItem.student_count || 0),
           0,
         );
 
-        // Filter today's classes
         const today = getTodayDay();
         const todayClasses = classesData.filter((classItem: Class) => {
           return classItem.schedule?.some((schedule) => schedule.day === today);
@@ -129,10 +122,9 @@ export default function TeacherHomePage() {
     }
   };
 
-  // Fetch teacher's flashcards count from the class-based flashcards
   const fetchTeacherFlashcardCount = async () => {
     try {
-      const response = await client.get(`/flashcards-class/count/${user.id}`);
+      const response = await client.get(`/flashcards-class/count/${user?.id}`);
       if (response.data.success) {
         setStats((prev) => ({
           ...prev,
@@ -144,11 +136,11 @@ export default function TeacherHomePage() {
     }
   };
 
-  // Fetch teacher's flashcards (for display in recent section)
   const fetchFlashcardSets = async () => {
     try {
-      // Fetch flashcards sets from the API
-      const response = await client.get(`/flashcards-class/teacher/${user.id}`);
+      const response = await client.get(
+        `/flashcards-class/teacher/${user?.id}`,
+      );
       if (response.data.success) {
         const sets = response.data.data || [];
         setFlashcardSets(sets);
@@ -158,10 +150,9 @@ export default function TeacherHomePage() {
     }
   };
 
-  // Fetch teacher's quizzes count
   const fetchTeacherQuizzes = async () => {
     try {
-      const response = await client.get(`/quizzes/teacher/${user.id}/count`);
+      const response = await client.get(`/quizzes/teacher/${user?.id}/count`);
       if (response.data.success) {
         setStats((prev) => ({
           ...prev,
@@ -173,7 +164,6 @@ export default function TeacherHomePage() {
     }
   };
 
-  // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -191,7 +181,6 @@ export default function TeacherHomePage() {
     }
   };
 
-  // Combined refresh function
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -213,7 +202,6 @@ export default function TeacherHomePage() {
     }
   }, [user?.id]);
 
-  // Handle class press navigation
   const handleClassPress = (classItem: Class) => {
     router.push({
       pathname: "/teachers/class-details/[id]",
@@ -231,7 +219,6 @@ export default function TeacherHomePage() {
     });
   };
 
-  // Handle flashcard press navigation - This is the key function
   const handleFlashcardPress = (flashcardSet: FlashcardSet) => {
     router.push({
       pathname: "/teachers/FlashCardClassDetails",
@@ -247,115 +234,183 @@ export default function TeacherHomePage() {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#4A90E2" />
-        <Text className="text-gray-600 mt-4">Loading dashboard...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading dashboard...
+        </Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-emerald-50"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={["#4A90E2"]}
-          tintColor="#4A90E2"
+          colors={["#10B981"]}
+          tintColor="#10B981"
           title="Pull to refresh..."
           titleColor="#6b7280"
         />
       }
     >
-      {/* Header */}
-      <View className="pt-12 pb-4 px-6 bg-white">
-        <Text className="text-2xl font-bold text-gray-900">
+      {/* Header - Pear Deck Style */}
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+        <View className="absolute top-14 right-32 w-8 h-8 bg-emerald-300/50 rounded-full" />
+
+        <Text className="text-3xl font-bold text-white mb-1">
           Teacher Dashboard
         </Text>
-        <Text className="text-gray-600 mt-1">
+        <Text className="text-emerald-100 text-base">
           Welcome back, {user?.first_name || "Teacher"}!
         </Text>
       </View>
 
-      {/* Teaching Performance Metrics */}
+      {/* Stats Cards */}
       <View className="px-6 mt-6">
-        <Text className="text-xl font-bold text-gray-800 mb-4">
-          Today&apos;s Overview
-        </Text>
+        <View className="flex-row items-center mb-4">
+          <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+            <Ionicons name="stats-chart-outline" size={16} color="#10B981" />
+          </View>
+          <Text className="text-xl font-bold text-gray-900">
+            Today's Overview
+          </Text>
+        </View>
+
         <View className="flex-row flex-wrap justify-between">
           {/* Active Classes */}
-          <View className="bg-white rounded-xl p-4 w-[48%] mb-4 shadow-sm border-l-4 border-blue-500">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-2xl font-bold text-gray-800">
-                  {stats.activeClasses}
-                </Text>
-                <Text className="text-gray-500 text-sm mt-1">
-                  Active Classes
-                </Text>
-              </View>
-              <Ionicons name="school-outline" size={28} color="#4A90E2" />
+          <View
+            className="bg-white rounded-2xl p-4 w-[48%] mb-4 relative overflow-hidden"
+            style={{
+              shadowColor: "#3B82F6",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
+          >
+            <View className="absolute -top-2 -right-2 w-12 h-12 bg-blue-100 rounded-full opacity-50" />
+            <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mb-3">
+              <Ionicons name="school-outline" size={20} color="#3B82F6" />
             </View>
-            <Text className="text-green-600 text-xs font-medium mt-2">
-              {stats.todayClasses.length} classes today
+            <Text className="text-2xl font-bold text-gray-900">
+              {stats.activeClasses}
             </Text>
+            <Text className="text-gray-500 text-sm font-medium">
+              Active Classes
+            </Text>
+            <View className="bg-blue-50 rounded-full px-2 py-0.5 mt-2 self-start">
+              <Text className="text-blue-600 text-xs font-semibold">
+                {stats.todayClasses.length} today
+              </Text>
+            </View>
           </View>
 
           {/* Flashcard Sets */}
-          <View className="bg-white rounded-xl p-4 w-[48%] mb-4 shadow-sm border-l-4 border-orange-500">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-2xl font-bold text-gray-800">
-                  {stats.flashcardSets}
-                </Text>
-                <Text className="text-gray-500 text-sm mt-1">
-                  Flashcard Sets
-                </Text>
-              </View>
-              <Ionicons name="copy-outline" size={28} color="#F59E0B" />
+          <View
+            className="bg-white rounded-2xl p-4 w-[48%] mb-4 relative overflow-hidden"
+            style={{
+              shadowColor: "#F59E0B",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
+          >
+            <View className="absolute -top-2 -right-2 w-12 h-12 bg-amber-100 rounded-full opacity-50" />
+            <View className="w-10 h-10 bg-amber-100 rounded-full items-center justify-center mb-3">
+              <Ionicons name="copy-outline" size={20} color="#F59E0B" />
             </View>
-            <Text className="text-blue-600 text-xs font-medium mt-2">
-              Across all classes
+            <Text className="text-2xl font-bold text-gray-900">
+              {stats.flashcardSets}
             </Text>
+            <Text className="text-gray-500 text-sm font-medium">
+              Flashcard Sets
+            </Text>
+            <View className="bg-amber-50 rounded-full px-2 py-0.5 mt-2 self-start">
+              <Text className="text-amber-600 text-xs font-semibold">
+                All classes
+              </Text>
+            </View>
           </View>
 
-          {/* Total Quizzes Created */}
-          <View className="bg-white rounded-xl p-4 w-[48%] mb-4 shadow-sm border-l-4 border-purple-500">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-2xl font-bold text-gray-800">
-                  {stats.totalQuizzes}
-                </Text>
-                <Text className="text-gray-500 text-sm mt-1">
-                  Quizzes Created
-                </Text>
-              </View>
+          {/* Total Quizzes */}
+          <View
+            className="bg-white rounded-2xl p-4 w-[48%] mb-4 relative overflow-hidden"
+            style={{
+              shadowColor: "#8B5CF6",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
+          >
+            <View className="absolute -top-2 -right-2 w-12 h-12 bg-purple-100 rounded-full opacity-50" />
+            <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mb-3">
               <Ionicons
                 name="document-text-outline"
-                size={28}
+                size={20}
                 color="#8B5CF6"
               />
             </View>
-            <Text className="text-purple-600 text-xs font-medium mt-2">
-              Across all classes
+            <Text className="text-2xl font-bold text-gray-900">
+              {stats.totalQuizzes}
             </Text>
+            <Text className="text-gray-500 text-sm font-medium">
+              Quizzes Created
+            </Text>
+            <View className="bg-purple-50 rounded-full px-2 py-0.5 mt-2 self-start">
+              <Text className="text-purple-600 text-xs font-semibold">
+                All classes
+              </Text>
+            </View>
           </View>
 
           {/* Total Students */}
-          <View className="bg-white rounded-xl p-4 w-[48%] shadow-sm border-l-4 border-green-500">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-2xl font-bold text-gray-800">
-                  {stats.totalStudents}
-                </Text>
-                <Text className="text-gray-500 text-sm mt-1">Students</Text>
-              </View>
-              <Ionicons name="people-outline" size={28} color="#10B981" />
+          <View
+            className="bg-white rounded-2xl p-4 w-[48%] relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
+          >
+            <View className="absolute -top-2 -right-2 w-12 h-12 bg-emerald-100 rounded-full opacity-50" />
+            <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mb-3">
+              <Ionicons name="people-outline" size={20} color="#10B981" />
             </View>
-            <Text className="text-blue-600 text-xs font-medium mt-2">
-              Across all classes
+            <Text className="text-2xl font-bold text-gray-900">
+              {stats.totalStudents}
             </Text>
+            <Text className="text-gray-500 text-sm font-medium">Students</Text>
+            <View className="bg-emerald-50 rounded-full px-2 py-0.5 mt-2 self-start">
+              <Text className="text-emerald-600 text-xs font-semibold">
+                All classes
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -363,55 +418,92 @@ export default function TeacherHomePage() {
       {/* Today's Classes */}
       <View className="px-6 mt-6">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-xl font-bold text-gray-800">
-            Today&apos;s Classes
-          </Text>
+          <View className="flex-row items-center">
+            <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+              <Ionicons name="calendar-outline" size={16} color="#10B981" />
+            </View>
+            <Text className="text-xl font-bold text-gray-900">
+              Today's Classes
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={() => router.push("/teachers/(drawers)/(tabs)/Classes")}
           >
-            <Text className="text-blue-600 font-medium">View All</Text>
+            <Text className="text-emerald-600 font-semibold">View All</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="bg-white rounded-xl p-4 shadow-sm">
+        <View
+          className="bg-white rounded-3xl p-4 relative overflow-hidden"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
           {stats.todayClasses.length > 0 ? (
             stats.todayClasses.map((classItem, index) => (
               <TouchableOpacity
                 key={classItem.id}
                 onPress={() => handleClassPress(classItem)}
-                className={`py-3 ${index < stats.todayClasses.length - 1 ? "border-b border-gray-100" : ""}`}
+                className={`py-4 ${index < stats.todayClasses.length - 1 ? "border-b border-emerald-100" : ""}`}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Text className="text-gray-800 font-medium">
+                    <Text className="text-gray-900 font-bold">
                       {classItem.name}
                     </Text>
-                    <Text className="text-gray-500 text-sm">
+                    <Text className="text-gray-500 text-sm mt-0.5">
                       {classItem.subject} • {classItem.grade_level}
                     </Text>
-                    <Text className="text-gray-400 text-xs mt-1">
-                      {formatScheduleTime(classItem.schedule)} •{" "}
-                      {classItem.room}
-                    </Text>
+                    <View className="flex-row items-center mt-1.5 gap-3">
+                      <View className="flex-row items-center">
+                        <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1">
+                          <Ionicons
+                            name="time-outline"
+                            size={9}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-400 text-xs">
+                          {formatScheduleTime(classItem.schedule)}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1">
+                          <Ionicons
+                            name="location-outline"
+                            size={9}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-400 text-xs">
+                          {classItem.room}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <View className="items-end">
-                    <Text className="text-gray-800 font-medium">
-                      {classItem.student_count}
-                    </Text>
-                    <Text className="text-gray-500 text-xs">students</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#9CA3AF"
-                    />
+                  <View className="items-end ml-3">
+                    <View className="bg-emerald-100 rounded-full px-2 py-0.5 mb-1">
+                      <Text className="text-emerald-700 text-xs font-bold">
+                        {classItem.student_count}
+                      </Text>
+                    </View>
+                    <Text className="text-gray-400 text-xs">students</Text>
                   </View>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
             <View className="py-8 items-center">
-              <Ionicons name="calendar-outline" size={48} color="#D1D5DB" />
-              <Text className="text-gray-500 text-center mt-2">
+              <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center mb-3">
+                <Ionicons name="calendar-outline" size={28} color="#10B981" />
+              </View>
+              <Text className="text-gray-500 font-medium">
                 No classes scheduled for today
               </Text>
             </View>
@@ -422,51 +514,103 @@ export default function TeacherHomePage() {
       {/* All Classes */}
       <View className="px-6 mt-6">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-xl font-bold text-gray-800">All Classes</Text>
+          <View className="flex-row items-center">
+            <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+              <Ionicons name="school-outline" size={16} color="#10B981" />
+            </View>
+            <Text className="text-xl font-bold text-gray-900">All Classes</Text>
+          </View>
           <TouchableOpacity
             onPress={() => router.push("/teachers/(drawers)/(tabs)/Classes")}
           >
-            <Text className="text-blue-600 font-medium">View All</Text>
+            <Text className="text-emerald-600 font-semibold">View All</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="bg-white rounded-xl p-4 shadow-sm">
+        <View
+          className="bg-white rounded-3xl p-4 relative overflow-hidden"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
           {classes.length > 0 ? (
             classes.slice(0, 3).map((classItem, index) => (
               <TouchableOpacity
                 key={classItem.id}
                 onPress={() => handleClassPress(classItem)}
-                className={`py-3 ${index < Math.min(3, classes.length) - 1 ? "border-b border-gray-100" : ""}`}
+                className={`py-4 ${index < Math.min(3, classes.length) - 1 ? "border-b border-emerald-100" : ""}`}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Text className="text-gray-800 font-medium">
+                    <Text className="text-gray-900 font-bold">
                       {classItem.name}
                     </Text>
-                    <Text className="text-gray-500 text-sm">
+                    <Text className="text-gray-500 text-sm mt-0.5">
                       {classItem.subject} • {classItem.grade_level}
                     </Text>
-                    <Text className="text-gray-400 text-xs mt-1">
-                      {classItem.room} • {classItem.student_count} students
-                    </Text>
+                    <View className="flex-row items-center mt-1.5 gap-3">
+                      <View className="flex-row items-center">
+                        <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1">
+                          <Ionicons
+                            name="location-outline"
+                            size={9}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-400 text-xs">
+                          {classItem.room}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1">
+                          <Ionicons
+                            name="people-outline"
+                            size={9}
+                            color="#10B981"
+                          />
+                        </View>
+                        <Text className="text-gray-400 text-xs">
+                          {classItem.student_count} students
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center ml-3">
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#10B981"
+                    />
+                  </View>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
             <View className="py-8 items-center">
-              <Ionicons name="school-outline" size={48} color="#D1D5DB" />
-              <Text className="text-gray-500 text-center mt-2">
-                No classes yet
-              </Text>
+              <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center mb-3">
+                <Ionicons name="school-outline" size={28} color="#10B981" />
+              </View>
+              <Text className="text-gray-500 font-medium">No classes yet</Text>
               <TouchableOpacity
-                className="mt-4 bg-blue-500 rounded-lg px-4 py-2"
+                className="mt-4 bg-emerald-500 rounded-2xl px-6 py-3"
                 onPress={() =>
                   router.push("/teachers/(drawers)/(tabs)/Classes")
                 }
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 12,
+                  elevation: 5,
+                }}
               >
-                <Text className="text-white font-medium">
+                <Text className="text-white font-bold">
                   Create Your First Class
                 </Text>
               </TouchableOpacity>
@@ -475,52 +619,75 @@ export default function TeacherHomePage() {
         </View>
       </View>
 
-      {/* Recent Flashcards - Updated with working navigation */}
+      {/* Recent Flashcards */}
       <View className="px-6 mt-6 mb-8">
-        <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-xl font-bold text-gray-800">My Flashcards</Text>
+        <View className="flex-row items-center mb-4">
+          <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+            <Ionicons name="copy-outline" size={16} color="#10B981" />
+          </View>
+          <Text className="text-xl font-bold text-gray-900">My Flashcards</Text>
         </View>
 
-        <View className="bg-white rounded-xl p-4 shadow-sm">
+        <View
+          className="bg-white rounded-3xl p-4 relative overflow-hidden"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
+          <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
           {flashcardSets.length > 0 ? (
             flashcardSets.slice(0, 3).map((flashcard, index) => (
               <TouchableOpacity
                 key={flashcard.id}
                 onPress={() => handleFlashcardPress(flashcard)}
-                className={`py-3 ${index < Math.min(3, flashcardSets.length) - 1 ? "border-b border-gray-100" : ""}`}
+                className={`py-4 ${index < Math.min(3, flashcardSets.length) - 1 ? "border-b border-emerald-100" : ""}`}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Text className="text-gray-800 font-medium">
+                    <Text className="text-gray-900 font-bold">
                       {flashcard.title}
                     </Text>
-                    <Text className="text-gray-500 text-sm">
+                    <Text className="text-gray-500 text-sm mt-0.5">
                       {flashcard.subject || "General"} •{" "}
                       {flashcard.flashcards?.length || 0} cards
                     </Text>
-                    <Text className="text-gray-400 text-xs mt-1">
-                      Created:{" "}
-                      {new Date(flashcard.created_at).toLocaleDateString()}
-                    </Text>
+                    <View className="flex-row items-center mt-1.5">
+                      <View className="w-4 h-4 bg-emerald-100 rounded-full items-center justify-center mr-1">
+                        <Ionicons
+                          name="calendar-outline"
+                          size={9}
+                          color="#10B981"
+                        />
+                      </View>
+                      <Text className="text-gray-400 text-xs">
+                        Created:{" "}
+                        {new Date(flashcard.created_at).toLocaleDateString()}
+                      </Text>
+                    </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center ml-3">
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#10B981"
+                    />
+                  </View>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
             <View className="py-8 items-center">
-              <Ionicons name="copy-outline" size={48} color="#D1D5DB" />
-              <Text className="text-gray-500 text-center mt-2">
+              <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center mb-3">
+                <Ionicons name="copy-outline" size={28} color="#10B981" />
+              </View>
+              <Text className="text-gray-500 font-medium">
                 No flashcards yet
               </Text>
-              {/* <TouchableOpacity
-                className="mt-4 bg-blue-500 rounded-lg px-4 py-2"
-                onPress={() => router.push("/flashcards/create")}
-              >
-                <Text className="text-white font-medium">
-                  Create Flashcards
-                </Text>
-              </TouchableOpacity> */}
             </View>
           )}
         </View>

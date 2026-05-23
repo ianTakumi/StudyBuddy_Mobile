@@ -1,26 +1,26 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Alert,
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-} from "react-native";
+import client from "@/utils/axiosInstance";
 import { Ionicons } from "@expo/vector-icons";
-import DatePicker from "react-native-date-picker";
 import {
   useGlobalSearchParams,
   useLocalSearchParams,
   useRouter,
 } from "expo-router";
-import { useSelector } from "react-redux";
-import client from "@/utils/axiosInstance";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import DatePicker from "react-native-date-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { useSelector } from "react-redux";
 
 interface Quiz {
   id: string;
@@ -826,9 +826,15 @@ export default function Quizzes() {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-gray-600 mt-4">Loading quizzes...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading quizzes...
+        </Text>
       </View>
     );
   }
@@ -836,32 +842,54 @@ export default function Quizzes() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 pb-4 px-6 bg-white border-b border-gray-200">
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+
         <View className="flex-row items-center justify-between mb-4">
-          <View>
-            <Text className="text-2xl font-bold text-gray-900">Quizzes</Text>
-            <Text className="text-gray-600 mt-1">
+          <View className="flex-1">
+            <Text className="text-3xl font-bold text-white">Quizzes</Text>
+            <Text className="text-emerald-100 text-base mt-1">
               {params.className} • {quizzes.length} quizzes
             </Text>
           </View>
           <TouchableOpacity
-            className="bg-blue-500 rounded-xl px-4 py-2 flex-row items-center"
+            className="bg-white rounded-2xl px-5 py-3 flex-row items-center"
             onPress={() => setShowAddModal(true)}
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 5,
+            }}
           >
-            <Ionicons name="add" size={20} color="white" />
-            <Text className="text-white font-semibold ml-2">New Quiz</Text>
+            <Ionicons name="add" size={20} color="#10B981" />
+            <Text className="text-emerald-600 font-bold ml-2">New Quiz</Text>
           </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
-        <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
-          <Ionicons name="search" size={20} color="#6B7280" />
+        <View className="flex-row items-center bg-white/20 rounded-2xl px-5 py-4">
+          <Ionicons name="search" size={20} color="white" />
           <TextInput
             placeholder="Search quizzes..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            className="flex-1 ml-2 text-gray-700"
-            placeholderTextColor={"#9CA3AF"}
+            className="flex-1 ml-3 text-white"
+            placeholderTextColor="rgba(255,255,255,0.7)"
           />
         </View>
       </View>
@@ -871,33 +899,62 @@ export default function Quizzes() {
         data={filteredQuizzes}
         keyExtractor={(item) => item.id}
         className="flex-1"
-        contentContainerClassName="p-4"
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#3B82F6"]}
-            tintColor="#3B82F6"
+            colors={["#10B981"]}
+            tintColor="#10B981"
           />
         }
         ListEmptyComponent={
-          <View className="bg-gray-50 rounded-2xl p-8 items-center mt-8">
-            <Ionicons name="help-circle-outline" size={64} color="#9CA3AF" />
-            <Text className="text-gray-500 text-center mt-4 text-lg font-semibold">
+          <View
+            className="bg-white rounded-3xl p-8 items-center mt-8 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-8 -right-8 w-20 h-20 bg-emerald-50 rounded-full" />
+            <View className="absolute -bottom-6 -left-6 w-16 h-16 bg-emerald-50 rounded-full" />
+            <View
+              className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-4"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="help-circle-outline" size={36} color="#10B981" />
+            </View>
+            <Text className="text-gray-800 text-lg font-bold text-center">
               {searchQuery ? "No quizzes found" : "No quizzes yet"}
             </Text>
-            <Text className="text-gray-400 text-center text-sm mt-2">
+            <Text className="text-gray-500 text-center text-sm mt-2">
               {searchQuery
                 ? "Try a different search term"
                 : "Create your first quiz to get started"}
             </Text>
             {!searchQuery && (
               <TouchableOpacity
-                className="bg-blue-500 rounded-xl py-3 px-6 flex-row items-center justify-center mt-4"
+                className="bg-emerald-500 rounded-2xl py-4 px-8 flex-row items-center mt-4"
                 onPress={() => setShowAddModal(true)}
+                style={{
+                  shadowColor: "#10B981",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  elevation: 8,
+                }}
               >
                 <Ionicons name="add" size={20} color="white" />
-                <Text className="text-white font-semibold ml-2">
+                <Text className="text-white font-bold ml-2">
                   Create First Quiz
                 </Text>
               </TouchableOpacity>
@@ -910,52 +967,74 @@ export default function Quizzes() {
           const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
 
           return (
-            <View className="bg-white rounded-2xl p-4 mb-3 shadow-lg border border-gray-200">
-              {/* Header Section */}
+            <View
+              className="bg-white rounded-3xl p-5 mb-4 relative overflow-hidden"
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                elevation: 5,
+              }}
+            >
+              <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full opacity-70" />
+              <View className="absolute -bottom-3 -left-3 w-12 h-12 bg-emerald-50 rounded-full opacity-70" />
+
               <View className="flex-row items-start justify-between mb-3">
                 <View className="flex-1 mr-2">
-                  <Text className="font-bold text-gray-900 text-lg">
-                    {item.title}
-                  </Text>
-                  {item.description ? (
-                    <Text
-                      className="text-gray-600 text-sm mt-1"
-                      numberOfLines={2}
-                    >
-                      {item.description}
-                    </Text>
-                  ) : null}
+                  <View className="flex-row items-center mb-2">
+                    <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                      <Ionicons
+                        name="document-text-outline"
+                        size={20}
+                        color="#10B981"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-bold text-gray-900 text-lg">
+                        {item.title}
+                      </Text>
+                      {item.description ? (
+                        <Text
+                          className="text-gray-600 text-sm mt-0.5"
+                          numberOfLines={2}
+                        >
+                          {item.description}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
                 </View>
-                <View className="bg-blue-100 rounded-lg px-2 py-1">
-                  <Text className="text-blue-700 text-xs font-semibold">
+                <View className="bg-emerald-100 rounded-full px-3 py-1">
+                  <Text className="text-emerald-700 text-xs font-bold">
                     {item.total_points} pts
                   </Text>
                 </View>
               </View>
 
-              {/* Info Row */}
-              <View className="flex-row flex-wrap items-center justify-between mb-3">
-                <View className="flex-row items-center gap-2 mb-1">
-                  <View className="flex-row items-center">
+              <View className="flex-row flex-wrap items-center gap-3 ml-13 mb-3">
+                <View className="flex-row items-center">
+                  <View className="w-5 h-5 bg-emerald-100 rounded-full items-center justify-center mr-1">
                     <Ionicons
                       name="calendar-outline"
-                      size={14}
-                      color="#6B7280"
+                      size={10}
+                      color="#10B981"
                     />
-                    <Text className="text-gray-600 text-xs ml-1">
-                      {formatDateTime(item.due_date)}
-                    </Text>
                   </View>
-                  <View className="flex-row items-center">
-                    <Ionicons name="list-outline" size={14} color="#6B7280" />
-                    <Text className="text-gray-600 text-xs ml-1">
-                      {item.quiz_questions?.length || 0} questions
-                    </Text>
-                  </View>
+                  <Text className="text-gray-500 text-xs">
+                    {formatDateTime(item.due_date)}
+                  </Text>
                 </View>
-
+                <View className="flex-row items-center">
+                  <View className="w-5 h-5 bg-emerald-100 rounded-full items-center justify-center mr-1">
+                    <Ionicons name="list-outline" size={10} color="#10B981" />
+                  </View>
+                  <Text className="text-gray-500 text-xs">
+                    {item.quiz_questions?.length || 0} questions
+                  </Text>
+                </View>
                 <View
-                  className="rounded-lg px-2 py-1"
+                  className="rounded-full px-3 py-1"
                   style={{
                     backgroundColor: `${getQuizTypeColor(item.quiz_type)}15`,
                   }}
@@ -969,62 +1048,57 @@ export default function Quizzes() {
                 </View>
               </View>
 
-              {/* Status Badges */}
-              <View className="flex-row items-center gap-2 mb-3">
+              <View className="flex-row items-center gap-2 mb-3 ml-13">
                 {isOverdue && (
-                  <View className="bg-red-100 rounded-lg px-2 py-1">
-                    <Text className="text-red-700 text-xs font-semibold">
+                  <View className="bg-red-50 rounded-full px-3 py-1">
+                    <Text className="text-red-600 text-xs font-semibold">
                       Overdue
                     </Text>
                   </View>
                 )}
                 {isDueSoon && !isOverdue && (
-                  <View className="bg-amber-100 rounded-lg px-2 py-1">
-                    <Text className="text-amber-700 text-xs font-semibold">
+                  <View className="bg-amber-50 rounded-full px-3 py-1">
+                    <Text className="text-amber-600 text-xs font-semibold">
                       Due soon
                     </Text>
                   </View>
                 )}
               </View>
 
-              {/* Action Buttons - Wrapped for better spacing */}
-              <View className="flex-row flex-wrap gap-2 mt-1">
+              <View className="flex-row flex-wrap gap-2 ml-13">
                 <TouchableOpacity
-                  className="bg-blue-100 px-3 py-1.5 rounded-lg flex-row items-center"
+                  className="bg-emerald-100 px-4 py-2 rounded-full flex-row items-center"
                   onPress={() => openEditModal(item)}
                 >
-                  <Ionicons name="create-outline" size={14} color="#3B82F6" />
-                  <Text className="text-blue-600 text-xs font-medium ml-1">
+                  <Ionicons name="create-outline" size={14} color="#10B981" />
+                  <Text className="text-emerald-700 text-xs font-semibold ml-1.5">
                     Edit
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
-                  className="bg-red-100 px-3 py-1.5 rounded-lg flex-row items-center"
+                  className="bg-red-50 px-4 py-2 rounded-full flex-row items-center"
                   onPress={() => handleDeleteQuiz(item)}
                 >
                   <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                  <Text className="text-red-600 text-xs font-medium ml-1">
+                  <Text className="text-red-600 text-xs font-semibold ml-1.5">
                     Delete
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
-                  className="bg-green-100 px-3 py-1.5 rounded-lg flex-row items-center"
+                  className="bg-emerald-50 px-4 py-2 rounded-full flex-row items-center"
                   onPress={() => openQuestionsModal(item)}
                 >
-                  <Ionicons name="eye-outline" size={14} color="#10B981" />
-                  <Text className="text-green-600 text-xs font-medium ml-1">
+                  <Ionicons name="eye-outline" size={14} color="#059669" />
+                  <Text className="text-emerald-700 text-xs font-semibold ml-1.5">
                     Questions
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
-                  className="bg-purple-100 px-3 py-1.5 rounded-lg flex-row items-center"
+                  className="bg-purple-50 px-4 py-2 rounded-full flex-row items-center"
                   onPress={() => openSubmissionsModal(item)}
                 >
                   <Ionicons name="people-outline" size={14} color="#8B5CF6" />
-                  <Text className="text-purple-600 text-xs font-medium ml-1">
+                  <Text className="text-purple-600 text-xs font-semibold ml-1.5">
                     Submissions
                   </Text>
                 </TouchableOpacity>
@@ -1313,9 +1387,25 @@ const QuizModal: React.FC<QuizModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
       <View className="flex-1 justify-center items-center bg-black/50">
-        <View className="bg-white rounded-2xl mx-4 w-11/12 max-h-[90%]">
-          <View className="p-6 border-b border-gray-200">
-            <Text className="text-2xl font-bold text-gray-900">{title}</Text>
+        <View
+          className="bg-white rounded-3xl mx-4 w-11/12 max-h-[90%] relative overflow-hidden"
+          style={{
+            shadowColor: "#10B981",
+            shadowOffset: { width: 0, height: 20 },
+            shadowOpacity: 0.2,
+            shadowRadius: 40,
+            elevation: 15,
+          }}
+        >
+          <View className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-100 rounded-full opacity-50" />
+
+          <View className="p-6 border-b border-emerald-100">
+            <View className="flex-row items-center">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="create-outline" size={22} color="#10B981" />
+              </View>
+              <Text className="text-2xl font-bold text-gray-900">{title}</Text>
+            </View>
           </View>
 
           <KeyboardAwareScrollView
@@ -1339,7 +1429,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                   <TextInput
                     value={formData.title}
                     onChangeText={(text) => handleFieldChange("title", text)}
-                    className={`border ${validationErrors.title ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 bg-white`}
+                    className={`border-2 ${validationErrors.title ? "border-red-300 bg-red-50" : "border-emerald-200 bg-emerald-50"} rounded-2xl px-5 py-4 text-gray-900`}
                     placeholder="Enter quiz title"
                     placeholderTextColor="#9CA3AF"
                   />
@@ -1361,7 +1451,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                     }
                     multiline
                     numberOfLines={3}
-                    className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-white"
+                    className="border-2 border-emerald-200 rounded-2xl px-5 py-4 text-gray-900 bg-emerald-50"
                     placeholder="Enter quiz description"
                     placeholderTextColor="#9CA3AF"
                     textAlignVertical="top"
@@ -1375,7 +1465,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                   </Text>
                   <TouchableOpacity
                     onPress={() => setOpenDatePicker(true)}
-                    className={`border ${validationErrors.due_date ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 bg-white flex-row items-center justify-between`}
+                    className={`border-2 ${validationErrors.due_date ? "border-red-300 bg-red-50" : "border-emerald-200 bg-emerald-50"} rounded-2xl px-5 py-4 flex-row items-center justify-between`}
                   >
                     <Text className="text-gray-900">
                       {selectedDate.toLocaleDateString("en-US", {
@@ -1420,7 +1510,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                         onChangeText={handleHourChange}
                         keyboardType="numeric"
                         maxLength={2}
-                        className={`border ${validationErrors.due_time ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 bg-white text-center`}
+                        className={`border-2 ${validationErrors.due_time ? "border-red-300 bg-red-50" : "border-emerald-200 bg-emerald-50"} rounded-2xl px-4 py-4 text-gray-900 text-center font-medium`}
                         placeholder="HH"
                         placeholderTextColor="#9CA3AF"
                       />
@@ -1435,37 +1525,39 @@ const QuizModal: React.FC<QuizModalProps> = ({
                         onChangeText={handleMinuteChange}
                         keyboardType="numeric"
                         maxLength={2}
-                        className={`border ${validationErrors.due_time ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 bg-white text-center`}
+                        className={`border-2 ${validationErrors.due_time ? "border-red-300 bg-red-50" : "border-emerald-200 bg-emerald-50"} rounded-2xl px-4 py-4 text-gray-900 text-center font-medium`}
                         placeholder="MM"
                         placeholderTextColor="#9CA3AF"
                       />
                     </View>
 
                     <View className="flex-1">
-                      <Text className="text-gray-500 text-xs mb-1">AM/PM</Text>
-                      <View className="flex-row border border-gray-300 rounded-xl overflow-hidden">
+                      <Text className="text-gray-500 text-xs mb-1 ml-1">
+                        AM/PM
+                      </Text>
+                      <View className="flex-row border-2 border-emerald-200 rounded-2xl overflow-hidden">
                         <TouchableOpacity
-                          className={`flex-1 py-3 ${ampm === "AM" ? "bg-blue-500" : "bg-white"}`}
+                          className={`flex-1 py-4 ${ampm === "AM" ? "bg-emerald-500" : "bg-emerald-50"}`}
                           onPress={() => {
                             setAmpm("AM");
                             updateDateTime();
                           }}
                         >
                           <Text
-                            className={`text-center font-medium ${ampm === "AM" ? "text-white" : "text-gray-700"}`}
+                            className={`text-center font-bold ${ampm === "AM" ? "text-white" : "text-emerald-700"}`}
                           >
                             AM
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          className={`flex-1 py-3 ${ampm === "PM" ? "bg-blue-500" : "bg-white"}`}
+                          className={`flex-1 py-4 ${ampm === "PM" ? "bg-emerald-500" : "bg-emerald-50"}`}
                           onPress={() => {
                             setAmpm("PM");
                             updateDateTime();
                           }}
                         >
                           <Text
-                            className={`text-center font-medium ${ampm === "PM" ? "text-white" : "text-gray-700"}`}
+                            className={`text-center font-bold ${ampm === "PM" ? "text-white" : "text-emerald-700"}`}
                           >
                             PM
                           </Text>
@@ -1486,12 +1578,12 @@ const QuizModal: React.FC<QuizModalProps> = ({
                 </View>
 
                 {/* Total Points Display */}
-                <View className="bg-blue-50 rounded-xl p-3">
+                <View className="bg-emerald-50 rounded-2xl p-4">
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-blue-700 font-medium">
+                    <Text className="text-emerald-700 font-semibold">
                       Total Points from Questions:
                     </Text>
-                    <Text className="text-blue-800 font-bold text-lg">
+                    <Text className="text-emerald-800 font-bold text-lg">
                       {totalQuestionPoints}
                     </Text>
                   </View>
@@ -1515,7 +1607,7 @@ const QuizModal: React.FC<QuizModalProps> = ({
                         key={type.value}
                         className={`mx-1 mb-2 px-3 py-2 rounded-lg border ${
                           formData.quiz_type === type.value
-                            ? "bg-blue-500 border-blue-500"
+                            ? "bg-emerald-500 border-emerald-500"
                             : "bg-white border-gray-300"
                         }`}
                         onPress={() =>
@@ -1544,7 +1636,14 @@ const QuizModal: React.FC<QuizModalProps> = ({
                     Questions
                   </Text>
                   <TouchableOpacity
-                    className="bg-green-500 rounded-lg px-3 py-2 flex-row items-center"
+                    className="bg-emerald-500 rounded-full px-4 py-2 flex-row items-center"
+                    style={{
+                      shadowColor: "#10B981",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 8,
+                      elevation: 3,
+                    }}
                     onPress={addQuestion}
                   >
                     <Ionicons name="add" size={16} color="white" />

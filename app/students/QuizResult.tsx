@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import client from "@/utils/axiosInstance";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface QuizResult {
   id: string;
@@ -51,15 +50,31 @@ export default function QuizResult() {
   // Determine grade and color based on percentage
   const getGradeInfo = (percentage: number) => {
     if (percentage >= 90) {
-      return { grade: "Excellent", color: "#10B981", icon: "trophy" };
+      return {
+        grade: "Excellent",
+        color: "#10B981",
+        bgColor: "bg-emerald-100",
+        icon: "trophy",
+      };
     } else if (percentage >= 75) {
-      return { grade: "Good", color: "#3B82F6", icon: "checkmark-circle" };
+      return {
+        grade: "Good",
+        color: "#059669",
+        bgColor: "bg-emerald-50",
+        icon: "checkmark-circle",
+      };
     } else if (percentage >= 60) {
-      return { grade: "Satisfactory", color: "#F59E0B", icon: "warning" };
+      return {
+        grade: "Satisfactory",
+        color: "#F59E0B",
+        bgColor: "bg-amber-50",
+        icon: "warning",
+      };
     } else {
       return {
         grade: "Needs Improvement",
         color: "#EF4444",
+        bgColor: "bg-red-50",
         icon: "alert-circle",
       };
     }
@@ -111,30 +126,55 @@ export default function QuizResult() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-blue-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-blue-600 mt-4">Loading results...</Text>
+      <View className="flex-1 bg-emerald-50 justify-center items-center">
+        <View className="relative">
+          <ActivityIndicator size="large" color="#10B981" />
+          <View className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
+          <View className="absolute -bottom-2 -left-2 w-6 h-6 bg-emerald-300 rounded-full opacity-40" />
+        </View>
+        <Text className="text-emerald-600 mt-4 font-medium">
+          Loading results...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-blue-50">
-      {/* Header */}
-      <View className="bg-blue-500 pt-12 pb-6 px-6">
+    <View className="flex-1 bg-emerald-50">
+      {/* Header - Pear Deck Style */}
+      <View
+        className="w-full pt-16 pb-8 px-6 bg-emerald-500"
+        style={{
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+          shadowColor: "#10B981",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        {/* Decorative Circles */}
+        <View className="absolute top-8 left-6 w-16 h-16 bg-emerald-400/30 rounded-full" />
+        <View className="absolute top-20 right-10 w-24 h-24 bg-emerald-400/20 rounded-full" />
+        <View className="absolute bottom-4 left-20 w-12 h-12 bg-emerald-300/40 rounded-full" />
+        <View className="absolute top-14 right-32 w-8 h-8 bg-emerald-300/50 rounded-full" />
+
         <TouchableOpacity
           onPress={() => router.back()}
           className="flex-row items-center mb-4"
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
-          <Text className="text-white ml-2 font-medium">Back</Text>
+          <View className="w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-2">
+            <Ionicons name="arrow-back" size={18} color="white" />
+          </View>
+          <Text className="text-white font-medium">Back</Text>
         </TouchableOpacity>
 
         <View>
-          <Text className="text-2xl font-bold text-white mb-1">
+          <Text className="text-3xl font-bold text-white mb-1">
             Quiz Results
           </Text>
-          <Text className="text-blue-100">{className}</Text>
+          <Text className="text-emerald-100 text-base">{className}</Text>
         </View>
       </View>
 
@@ -145,24 +185,74 @@ export default function QuizResult() {
       >
         <View className="p-6">
           {/* Quiz Title Card */}
-          <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border border-blue-100">
-            <Text className="text-gray-500 text-sm mb-2">Quiz Title</Text>
-            <Text className="text-2xl font-bold text-gray-900 mb-2">
+          <View
+            className="bg-white rounded-3xl p-6 mb-6 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+            <View className="absolute -bottom-3 -left-3 w-12 h-12 bg-emerald-50 rounded-full opacity-70" />
+
+            <View className="flex-row items-center mb-3">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons
+                  name="document-text-outline"
+                  size={20}
+                  color="#10B981"
+                />
+              </View>
+              <Text className="text-gray-500 text-sm font-medium">
+                Quiz Title
+              </Text>
+            </View>
+            <Text className="text-2xl font-bold text-gray-900 mb-2 ml-13">
               {quizTitle}
             </Text>
             {quizDetails?.description && (
-              <Text className="text-gray-600 text-sm leading-5">
+              <Text className="text-gray-600 text-sm leading-5 ml-13">
                 {quizDetails.description}
               </Text>
             )}
           </View>
 
           {/* Score Card */}
-          <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border border-blue-100 items-center">
-            <View className="w-32 h-32 rounded-full bg-blue-100 items-center justify-center mb-4">
-              <Text className="text-4xl font-bold text-blue-600">
-                {Math.round(percentage)}%
-              </Text>
+          <View
+            className="bg-white rounded-3xl p-8 mb-6 items-center relative overflow-hidden"
+            style={{
+              shadowColor: gradeInfo.color,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 20,
+              elevation: 8,
+            }}
+          >
+            <View className="absolute -top-8 -right-8 w-24 h-24 bg-emerald-50 rounded-full" />
+            <View className="absolute -bottom-6 -left-6 w-20 h-20 bg-emerald-50 rounded-full opacity-70" />
+
+            {/* Circular Progress */}
+            <View className="relative mb-6">
+              <View
+                className="w-36 h-36 rounded-full items-center justify-center"
+                style={{ backgroundColor: `${gradeInfo.color}15` }}
+              >
+                <View
+                  className="w-28 h-28 rounded-full items-center justify-center"
+                  style={{ backgroundColor: `${gradeInfo.color}25` }}
+                >
+                  <Text
+                    className="text-4xl font-bold"
+                    style={{ color: gradeInfo.color }}
+                  >
+                    {Math.round(percentage)}%
+                  </Text>
+                </View>
+              </View>
+              <View className="absolute -top-2 -right-2 w-8 h-8 bg-emerald-200 rounded-full opacity-50" />
             </View>
 
             <Text className="text-3xl font-bold text-gray-900 mb-2">
@@ -170,7 +260,7 @@ export default function QuizResult() {
             </Text>
 
             <View
-              className={`bg-${gradeInfo.color.replace("#", "")}/10 px-4 py-2 rounded-full mt-2`}
+              className={`${gradeInfo.bgColor} px-5 py-2 rounded-full mt-2`}
             >
               <View className="flex-row items-center">
                 <Ionicons
@@ -179,7 +269,7 @@ export default function QuizResult() {
                   color={gradeInfo.color}
                 />
                 <Text
-                  className={`ml-2 font-semibold`}
+                  className="ml-2 font-bold"
                   style={{ color: gradeInfo.color }}
                 >
                   {gradeInfo.grade}
@@ -189,65 +279,144 @@ export default function QuizResult() {
           </View>
 
           {/* Performance Stats */}
-          <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border border-blue-100">
-            <Text className="text-lg font-bold text-gray-900 mb-4">
-              Performance Summary
-            </Text>
+          <View
+            className="bg-white rounded-3xl p-6 mb-6 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
 
-            <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-gray-100">
-              <Text className="text-gray-600">Score Percentage</Text>
-              <Text className="text-blue-600 font-bold">
-                {Math.round(percentage)}%
+            <View className="flex-row items-center mb-4">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons
+                  name="stats-chart-outline"
+                  size={20}
+                  color="#10B981"
+                />
+              </View>
+              <Text className="text-lg font-bold text-gray-900">
+                Performance Summary
               </Text>
             </View>
 
-            <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-gray-100">
-              <Text className="text-gray-600">Total Questions</Text>
-              <Text className="text-gray-900 font-medium">
-                {quizDetails?.question_count || 0}
-              </Text>
-            </View>
+            <View className="ml-13">
+              <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-emerald-100">
+                <Text className="text-gray-600 font-medium">
+                  Score Percentage
+                </Text>
+                <View className="bg-emerald-100 rounded-full px-3 py-1">
+                  <Text className="text-emerald-700 font-bold">
+                    {Math.round(percentage)}%
+                  </Text>
+                </View>
+              </View>
 
-            <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-gray-100">
-              <Text className="text-gray-600">Correct Answers</Text>
-              <Text className="text-green-600 font-bold">{score}</Text>
-            </View>
+              <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-emerald-100">
+                <Text className="text-gray-600 font-medium">
+                  Total Questions
+                </Text>
+                <Text className="text-gray-900 font-bold">
+                  {quizDetails?.question_count || 0}
+                </Text>
+              </View>
 
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-600">Incorrect Answers</Text>
-              <Text className="text-red-600 font-bold">
-                {totalPoints - score}
-              </Text>
+              <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-emerald-100">
+                <Text className="text-gray-600 font-medium">
+                  Correct Answers
+                </Text>
+                <View className="bg-emerald-100 rounded-full px-3 py-1">
+                  <Text className="text-emerald-700 font-bold">{score}</Text>
+                </View>
+              </View>
+
+              <View className="flex-row justify-between items-center">
+                <Text className="text-gray-600 font-medium">
+                  Incorrect Answers
+                </Text>
+                <View className="bg-red-50 rounded-full px-3 py-1">
+                  <Text className="text-red-600 font-bold">
+                    {totalPoints - score}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
 
           {/* Progress Bar */}
-          <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border border-blue-100">
-            <Text className="text-lg font-bold text-gray-900 mb-4">
-              Score Progress
-            </Text>
-            <View className="bg-gray-200 rounded-full h-3 mb-2">
-              <View
-                className="bg-blue-500 rounded-full h-3"
-                style={{ width: `${percentage}%` }}
-              />
+          <View
+            className="bg-white rounded-3xl p-6 mb-6 relative overflow-hidden"
+            style={{
+              shadowColor: "#10B981",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
+            <View className="flex-row items-center mb-4">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons
+                  name="trending-up-outline"
+                  size={20}
+                  color="#10B981"
+                />
+              </View>
+              <Text className="text-lg font-bold text-gray-900">
+                Score Progress
+              </Text>
             </View>
-            <View className="flex-row justify-between">
-              <Text className="text-gray-500 text-xs">0%</Text>
-              <Text className="text-gray-500 text-xs">50%</Text>
-              <Text className="text-gray-500 text-xs">100%</Text>
+
+            <View className="ml-13">
+              <View className="bg-emerald-100 rounded-full h-3 mb-2">
+                <View
+                  className="bg-emerald-500 rounded-full h-3"
+                  style={{
+                    width: `${percentage}%`,
+                    shadowColor: "#10B981",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                />
+              </View>
+              <View className="flex-row justify-between">
+                <Text className="text-gray-400 text-xs font-medium">0%</Text>
+                <Text className="text-gray-400 text-xs font-medium">50%</Text>
+                <Text className="text-gray-400 text-xs font-medium">100%</Text>
+              </View>
             </View>
           </View>
 
           {/* Message based on performance */}
-          <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border border-blue-100">
+          <View
+            className="bg-white rounded-3xl p-6 mb-6 relative overflow-hidden"
+            style={{
+              shadowColor: gradeInfo.color,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 5,
+            }}
+          >
+            <View className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full" />
+
             <View className="flex-row items-center mb-3">
-              <Ionicons
-                name="information-circle-outline"
-                size={24}
-                color="#3B82F6"
-              />
-              <Text className="text-lg font-bold text-gray-900 ml-2">
+              <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mr-3">
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="#10B981"
+                />
+              </View>
+              <Text className="text-lg font-bold text-gray-900">
                 {percentage >= 75
                   ? "Great Job! 🎉"
                   : percentage >= 60
@@ -255,7 +424,7 @@ export default function QuizResult() {
                     : "Need More Practice 📚"}
               </Text>
             </View>
-            <Text className="text-gray-600 leading-5">
+            <Text className="text-gray-600 leading-5 ml-13">
               {percentage >= 90
                 ? "Excellent work! You've mastered this quiz. Keep up the great performance!"
                 : percentage >= 75
@@ -269,11 +438,20 @@ export default function QuizResult() {
           {/* Action Buttons */}
           <View className="flex-row gap-3">
             <TouchableOpacity
-              className="flex-1 py-4 bg-blue-500 rounded-xl flex-row items-center justify-center"
+              className="flex-1 py-4 bg-emerald-500 rounded-2xl flex-row items-center justify-center"
               onPress={() => router.back()}
+              style={{
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.3,
+                shadowRadius: 16,
+                elevation: 8,
+              }}
             >
-              <Ionicons name="arrow-back" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">
+              <View className="w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-3">
+                <Ionicons name="arrow-back" size={18} color="white" />
+              </View>
+              <Text className="text-white font-bold text-lg">
                 Back to Class
               </Text>
             </TouchableOpacity>
